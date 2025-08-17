@@ -1,5 +1,5 @@
 use crate::processing::rule::Rule;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -7,6 +7,9 @@ use uuid::Uuid;
 static URL_TO_ID: LazyLock<Mutex<HashMap<String, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static RULES: LazyLock<Mutex<HashMap<String, HashMap<String, Rule>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+static MANUAL_BLOCKS: LazyLock<Mutex<HashMap<String, HashSet<String>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub async fn get_url_from_id(id: &str) -> Option<String> {
@@ -55,5 +58,28 @@ pub async fn delete_rule(calendar_id: &str, rule_id: &str) -> bool {
     let mut rules = RULES.lock().await;
     rules
         .get_mut(calendar_id)
-        .and_then(|map| map.remove(rule_id)).is_some()
+        .and_then(|map| map.remove(rule_id))
+        .is_some()
+}
+
+pub async fn add_manual_block(calendar_id: String, block: String) {
+    let mut manual_blocks = MANUAL_BLOCKS.lock().await;
+    let entry = manual_blocks
+        .entry(calendar_id)
+        .or_insert_with(HashSet::new);
+    entry.insert(block);
+}
+
+pub async fn get_manual_blocks(calendar_id: &str) -> Option<HashSet<String>> {
+    let manual_blocks = MANUAL_BLOCKS.lock().await;
+    manual_blocks.get(calendar_id).cloned()
+}
+
+pub async fn remove_manual_block(calendar_id: &str, block: &str) -> bool {
+    let mut manual_blocks = MANUAL_BLOCKS.lock().await;
+    if let Some(blocks) = manual_blocks.get_mut(calendar_id) {
+        blocks.remove(block);
+        return true;
+    }
+    false
 }

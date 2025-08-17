@@ -13,15 +13,15 @@ pub enum DateFormat {
 impl DateFormat {
     pub fn to_ical_str(&self) -> String {
         match self {
-            DateFormat::DateTime(_) => format!(":{}", self.to_formatted_string()),
-            DateFormat::Date(_) => format!(";VALUE=DATE:{}", self.to_formatted_string()),
+            DateFormat::DateTime(dt) => format!(":{}", dt.format("%Y%m%dT%H%M%SZ")),
+            DateFormat::Date(date) => format!(";VALUE=DATE:{}", date.format("%Y%m%d")),
         }
     }
 
     pub fn to_formatted_string(&self) -> String {
         match self {
-            DateFormat::DateTime(dt) => dt.format("%Y%m%dT%H%M%SZ").to_string(),
-            DateFormat::Date(date) => date.format("%Y%m%d").to_string(),
+            DateFormat::DateTime(dt) => dt.to_rfc3339(),
+            DateFormat::Date(date) => date.to_string(),
         }
     }
 }
@@ -57,6 +57,9 @@ pub fn parse_datetime(date_str: &str) -> Result<DateFormat, SyntaxError> {
             .map(|dt| DateFormat::Date(dt))
             .map_err(|e| SyntaxError::new(format!("Invalid date format: {}", e), None))
     } else {
-        Err(SyntaxError::new(format!("Invalid date format: {}", date_str), None))
+        Err(SyntaxError::new(
+            format!("Invalid date format: {}", date_str),
+            None,
+        ))
     }
 }

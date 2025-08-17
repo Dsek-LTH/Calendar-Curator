@@ -1,4 +1,4 @@
-use crate::processing::processing::Calendar;
+use crate::api::types::EventResponse;
 use crate::processing::rule::Rule;
 use crate::{db, upstream};
 use axum::Json;
@@ -18,12 +18,15 @@ pub(crate) fn router() -> axum::Router {
     let (app_router, openapi) = OpenApiRouter::new()
         .routes(routes!(create_calendar))
         .routes(routes!(get_events))
-        .routes(routes!(get_calendar))
+        .routes(routes!(get_calendar_url))
         .routes(routes!(create_rule))
         .routes(routes!(list_rules))
         .routes(routes!(update_rule))
         .routes(routes!(delete_rule))
         .routes(routes!(get_rule))
+        .routes(routes!(block_add))
+        .routes(routes!(block_remove))
+        .routes(routes!(block_list))
         .split_for_parts();
     app_router
         .route("/calendars/{id}/feed", axum::routing::get(get_feed))
@@ -67,7 +70,7 @@ pub async fn create_calendar(
         ("id" = String, Path, description = "The ID of the calendar")
     ),
     responses(
-        (status = 200, description = "Retrieved events for the calendar", body = Calendar),
+        (status = 200, description = "Retrieved events for the calendar", body = Vec<EventResponse>),
     )
 )]
 pub async fn get_events(Path(id): Path<String>) -> impl IntoResponse {
@@ -78,28 +81,35 @@ pub async fn get_events(Path(id): Path<String>) -> impl IntoResponse {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
-    Ok(Json(cal))
+    let blocked_events = db::get_manual_blocks(&id).await.unwrap_or_default();
+    let events: Vec<EventResponse> = cal
+        .events
+        .into_iter()
+        .map(|event| {
+            let blocked = blocked_events.contains(&event.uid);
+            EventResponse { event, blocked }
+        })
+        .collect();
+
+    Ok(Json(events))
 }
 
 #[utoipa::path(
     get,
-    path = "/calendars/{id}/get",
+    path = "/calendars/{id}/get_url",
     params(
         ("id" = String, Path, description = "The ID of the calendar")
     ),
     responses(
-        (status = 200, description = "Retrieved calendar", body = Calendar),
+        (status = 200, description = "Retrieved url", body = String),
         (status = 404, description = "Calendar not found")
     )
 )]
-pub async fn get_calendar(Path(id): Path<String>) -> impl IntoResponse {
-    let url = db::get_url_from_id(&id)
+pub async fn get_calendar_url(Path(id): Path<String>) -> impl IntoResponse {
+    db::get_url_from_id(&id)
         .await
-        .ok_or(StatusCode::NOT_FOUND)?;
-    let Ok(cal) = upstream::get_calendar(url).await else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
-    Ok(Json(cal))
+        .map(|e| Json(e))
+        .ok_or(StatusCode::NOT_FOUND)
 }
 
 pub async fn get_feed(Path(id): Path<String>) -> impl IntoResponse {
@@ -223,4 +233,59 @@ pub async fn get_rule(
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(rule))
+}
+
+#[utoipa::path(
+    post,
+    path = "/calendars/{id}/block/add",
+    request_body = String,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "Rule created", body = String)
+    )
+)]
+pub async fn block_add(Path(id): Path<String>, body: Json<String>) -> impl IntoResponse {
+    db::add_manual_block(id.clone(), body.0).await;
+    StatusCode::NO_CONTENT
+}
+
+#[utoipa::path(
+    post,
+    path = "/calendars/{id}/block/remove",
+    request_body = String,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "Rule created", body = String)
+    )
+)]
+pub async fn block_remove(Path(id): Path<String>, body: Json<String>) -> impl IntoResponse {
+    let success = db::remove_manual_block(&id, &body.0).await;
+    if !success {
+        Err(StatusCode::NOT_FOUND)
+    } else {
+        Ok(StatusCode::NO_CONTENT)
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/calendars/{id}/block/list",
+    request_body = String,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "List of all blocks", body = HashSet<String>)
+    )
+)]
+pub async fn block_list(Path(id): Path<String>) -> impl IntoResponse {
+    let Some(set) = db::get_manual_blocks(&id).await else {
+        return Err(StatusCode::NOT_FOUND);
+    };
+
+    Ok(Json(set))
 }

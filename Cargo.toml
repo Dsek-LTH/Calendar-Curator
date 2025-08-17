@@ -14,4 +14,4 @@ uuid = { version = "1.18.0", features = ["v4"] }
 tokio-util = "0.7.16"
 regex = "1.11.1"
 utoipa-axum = "0.2.0"
-backtrace-on-stack-overflow = "0.3.0"
+tower-http = { version = "0.6", features = ["cors"] }

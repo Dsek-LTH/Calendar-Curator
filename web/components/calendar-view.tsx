@@ -1,90 +1,96 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, EyeOffIcon } from "lucide-react"
-import { EventDetailsModal } from "@/components/event-details-modal"
-
-interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  description?: string
-  location?: string
-  organizer?: string
-  isBlocked?: boolean
-}
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, EyeOffIcon, } from "lucide-react";
+import { EventDetailsModal } from "@/components/event-details-modal";
+import { CalendarEvent } from "@/lib/api";
 
 interface CalendarViewProps {
-  events: CalendarEvent[]
-  blockedEventIds: Set<string>
-  onToggleBlock: (eventId: string) => void
+  events: CalendarEvent[];
+  onToggleBlock: (eventId: CalendarEvent) => void;
 }
 
-export function CalendarView({ events, blockedEventIds, onToggleBlock }: CalendarViewProps) {
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [currentDate, setCurrentDate] = useState(new Date())
+export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null,
+  );
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    if (selectedEvent) {
+      const updated = events.find((e) => e.uid === selectedEvent.uid);
+      if (updated) {
+        setSelectedEvent(updated);
+      }
+    }
+  }, [events, selectedEvent]);
 
   const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
 
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev)
+      const newDate = new Date(prev);
       if (direction === "prev") {
-        newDate.setMonth(prev.getMonth() - 1)
+        newDate.setMonth(prev.getMonth() - 1);
       } else {
-        newDate.setMonth(prev.getMonth() + 1)
+        newDate.setMonth(prev.getMonth() + 1);
       }
-      return newDate
-    })
-  }
+      return newDate;
+    });
+  };
 
   const getEventsForDate = (date: Date) => {
     return events
       .filter((event) => {
-        const eventDate = new Date(event.start)
-        return eventDate.toDateString() === date.toDateString()
+        if (!event.start) return false; // Skip events without a start date
+        const eventDate = new Date(event.start);
+        return eventDate.toDateString() === date.toDateString();
       })
-      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-  }
+      .sort(
+        (a, b) => new Date(a.start!!).getTime() - new Date(b.start!!).getTime(),
+      );
+  };
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    })
-  }
+    });
+  };
 
   const generateCalendarGrid = () => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDay = getFirstDayOfMonth(currentDate)
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
 
-    const days = []
+    const days = [];
 
     for (let i = 0; i < firstDay; i++) {
-      days.push(null)
+      days.push(null);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day))
+      days.push(new Date(year, month, day));
     }
 
-    return days
-  }
+    return days;
+  };
 
-  const calendarDays = generateCalendarGrid()
-  const monthName = currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  const calendarDays = generateCalendarGrid();
+  const monthName = currentDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <>
@@ -96,10 +102,18 @@ export function CalendarView({ events, blockedEventIds, onToggleBlock }: Calenda
               {monthName}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth("prev")}
+              >
                 <ChevronLeftIcon className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth("next")}
+              >
                 <ChevronRightIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -108,7 +122,10 @@ export function CalendarView({ events, blockedEventIds, onToggleBlock }: Calenda
         <CardContent>
           <div className="grid grid-cols-7 gap-1 mb-4">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground border-b">
+              <div
+                key={day}
+                className="p-2 text-center text-sm font-medium text-muted-foreground border-b"
+              >
                 {day}
               </div>
             ))}
@@ -124,30 +141,36 @@ export function CalendarView({ events, blockedEventIds, onToggleBlock }: Calenda
               >
                 {date && (
                   <>
-                    <div className="text-sm font-medium mb-1 text-center">{date.getDate()}</div>
+                    <div className="text-sm font-medium mb-1 text-center">
+                      {date.getDate()}
+                    </div>
 
                     <div className="space-y-1">
                       {getEventsForDate(date).map((event) => {
-                        const isBlocked = blockedEventIds.has(event.id)
+                        const isBlocked = event.blocked;
 
                         return (
                           <div
-                            key={event.id}
+                            key={event.uid}
                             className={`text-xs p-1 rounded cursor-pointer transition-all hover:shadow-sm ${
                               isBlocked
                                 ? "bg-destructive/20 text-destructive border border-destructive/30"
                                 : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
                             }`}
                             onClick={() => setSelectedEvent(event)}
-                            title={`${event.title} - ${formatTime(event.start)}`}
+                            title={`${event.summary} - ${formatTime(event.start!!)}`}
                           >
                             <div className="flex items-center justify-between gap-1">
-                              <span className="truncate font-medium">{formatTime(event.start)}</span>
-                              {isBlocked && <EyeOffIcon className="h-3 w-3 flex-shrink-0" />}
+                              <span className="truncate font-medium">
+                                {formatTime(event.start!!)}
+                              </span>
+                              {isBlocked && (
+                                <EyeOffIcon className="h-3 w-3 flex-shrink-0"/>
+                              )}
                             </div>
-                            <div className="truncate">{event.title}</div>
+                            <div className="truncate">{event.summary}</div>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </>
@@ -157,7 +180,8 @@ export function CalendarView({ events, blockedEventIds, onToggleBlock }: Calenda
           </div>
 
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Total events: {events.length} | Blocked: {blockedEventIds.size}
+            Total events: {events.length} | Blocked:{" "}
+            {events.filter((e) => e.blocked).length}
           </div>
         </CardContent>
       </Card>
@@ -167,8 +191,7 @@ export function CalendarView({ events, blockedEventIds, onToggleBlock }: Calenda
         isOpen={!!selectedEvent}
         onClose={() => setSelectedEvent(null)}
         onToggleBlock={onToggleBlock}
-        isBlocked={selectedEvent ? blockedEventIds.has(selectedEvent.id) : false}
       />
     </>
-  )
+  );
 }

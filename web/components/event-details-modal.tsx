@@ -1,35 +1,29 @@
-"use client"
+"use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { CalendarIcon, ClockIcon, MapPinIcon, UserIcon, EyeOffIcon, FileTextIcon } from "lucide-react"
-
-interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  description?: string
-  location?: string
-  organizer?: string
-  isBlocked?: boolean
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { CalendarIcon, ClockIcon, EyeOffIcon, FileTextIcon, MapPinIcon, } from "lucide-react";
+import { CalendarEvent } from "@/lib/api";
 
 interface EventDetailsModalProps {
-  event: CalendarEvent | null
-  isOpen: boolean
-  onClose: () => void
-  onToggleBlock: (eventId: string) => void
-  isBlocked: boolean
+  event: CalendarEvent | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onToggleBlock: (eventId: CalendarEvent) => void;
 }
 
-export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlocked }: EventDetailsModalProps) {
-  if (!event) return null
+export function EventDetailsModal({
+                                    event,
+                                    isOpen,
+                                    onClose,
+                                    onToggleBlock,
+                                  }: EventDetailsModalProps) {
+  if (!event) return null;
 
   const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return {
       date: date.toLocaleDateString("en-US", {
         weekday: "long",
@@ -41,12 +35,12 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
         hour: "2-digit",
         minute: "2-digit",
       }),
-    }
-  }
+    };
+  };
 
-  const startDateTime = formatDateTime(event.start)
-  const endDateTime = formatDateTime(event.end)
-  const isSameDay = startDateTime.date === endDateTime.date
+  const startDateTime = event.start ? formatDateTime(event.start) : null;
+  const endDateTime = event.end ? formatDateTime(event.end) : null;
+  const isSameDay = startDateTime?.date === endDateTime?.date;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -55,8 +49,10 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
           <DialogTitle className="flex items-start gap-3 text-left">
             <CalendarIcon className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
             <div className="flex-1">
-              <h2 className="text-xl font-semibold leading-tight">{event.title}</h2>
-              {isBlocked && (
+              <h2 className="text-xl font-semibold leading-tight">
+                {event.summary}
+              </h2>
+              {event.blocked && (
                 <Badge variant="destructive" className="mt-2">
                   <EyeOffIcon className="h-3 w-3 mr-1" />
                   Blocked Event
@@ -73,12 +69,17 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
               <ClockIcon className="h-4 w-4" />
               Date & Time
             </div>
-            <div className="pl-6 space-y-1">
-              <div className="font-medium">{startDateTime.date}</div>
-              <div className="text-sm text-muted-foreground">
-                {startDateTime.time} - {isSameDay ? endDateTime.time : `${endDateTime.date} ${endDateTime.time}`}
+            {startDateTime && endDateTime && (
+              <div className="pl-6 space-y-1">
+                <div className="font-medium">{startDateTime.date}</div>
+                <div className="text-sm text-muted-foreground">
+                  {startDateTime.time} -{" "}
+                  {isSameDay
+                    ? endDateTime.time
+                    : `${endDateTime.date} ${endDateTime.time}`}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Location */}
@@ -97,22 +98,6 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
             </>
           )}
 
-          {/* Organizer */}
-          {event.organizer && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <UserIcon className="h-4 w-4" />
-                  Organizer
-                </div>
-                <div className="pl-6">
-                  <div className="font-medium">{event.organizer}</div>
-                </div>
-              </div>
-            </>
-          )}
-
           {/* Description */}
           {event.description && (
             <>
@@ -123,7 +108,9 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
                   Description
                 </div>
                 <div className="pl-6">
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap">{event.description}</div>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {event.description}
+                  </div>
                 </div>
               </div>
             </>
@@ -133,21 +120,21 @@ export function EventDetailsModal({ event, isOpen, onClose, onToggleBlock, isBlo
           <Separator />
           <div className="flex items-center justify-between pt-2">
             <div className="text-sm text-muted-foreground">
-              {isBlocked
+              {event.blocked
                 ? "This event is blocked and won't appear in the filtered calendar."
                 : "This event will appear in the filtered calendar."}
             </div>
             <Button
-              variant={isBlocked ? "destructive" : "outline"}
-              onClick={() => onToggleBlock(event.id)}
+              variant={event.blocked ? "destructive" : "outline"}
+              onClick={() => onToggleBlock(event)}
               className="ml-4"
             >
               <EyeOffIcon className="h-4 w-4 mr-2" />
-              {isBlocked ? "Unblock Event" : "Block Event"}
+              {event.blocked ? "Unblock Event" : "Block Event"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

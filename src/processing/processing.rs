@@ -1,14 +1,14 @@
-use std::error::Error;
-use serde::Serialize;
-use utoipa::ToSchema;
 use crate::error::SyntaxError;
-use crate::utils::{parse_datetime, DateFormat};
+use crate::utils::{DateFormat, parse_datetime};
+use serde::Serialize;
+use std::error::Error;
+use utoipa::ToSchema;
 
 #[derive(ToSchema, Serialize)]
 pub struct Event {
     pub(crate) start: Option<DateFormat>,
     pub(crate) end: Option<DateFormat>,
-    uid: String,
+    pub(crate) uid: String,
     timestamp: String,
     last_modified: String,
     pub(crate) summary: String,
@@ -31,9 +31,15 @@ impl Event {
 
         for (i, line) in event_str.lines().enumerate() {
             if line.starts_with("DTSTART") {
-                event.start = Some(parse_datetime(&line.replace("DTSTART", "").trim()).map_err(|e| e.with_line(i+1))?);
+                event.start = Some(
+                    parse_datetime(&line.replace("DTSTART", "").trim())
+                        .map_err(|e| e.with_line(i + 1))?,
+                );
             } else if line.starts_with("DTEND") {
-                event.end = Some(parse_datetime(&line.replace("DTEND", "").trim()).map_err(|e| e.with_line(i+1))?);
+                event.end = Some(
+                    parse_datetime(&line.replace("DTEND", "").trim())
+                        .map_err(|e| e.with_line(i + 1))?,
+                );
             } else if line.starts_with("UID:") {
                 event.uid = line.replace("UID:", "").trim().to_string();
             } else if line.starts_with("DTSTAMP:") {
@@ -45,7 +51,11 @@ impl Event {
             } else if line.starts_with("LOCATION:") {
                 event.location = line.replace("LOCATION:", "").trim().to_string();
             } else if line.starts_with("DESCRIPTION:") {
-                event.description = line.replace("DESCRIPTION:", "").trim().to_string();
+                event.description = line
+                    .replace("DESCRIPTION:", "")
+                    .replace("\\n", "\n")
+                    .trim()
+                    .to_string();
             }
         }
         Ok(event)
@@ -61,13 +71,11 @@ pub struct Calendar {
     prodid: String,
     calscale: String,
     published_ttl: String,
-    events: Vec<Event>,
+    pub events: Vec<Event>,
 }
 
 impl Calendar {
-    pub fn from_string(
-        calendar_str: &str,
-    ) -> Result<Calendar, Box<dyn Error>> {
+    pub fn from_string(calendar_str: &str) -> Result<Calendar, Box<dyn Error>> {
         let mut calendar = Calendar {
             name: String::new(),
             description: String::new(),
@@ -96,25 +104,29 @@ impl Calendar {
         }
         let calendar_str = unfolded_lines.replace("\\,", ",").replace("\\;", ";");
 
-
         for (i, line) in calendar_str.lines().enumerate() {
-
             if in_event {
                 if line.starts_with("BEGIN:VEVENT") {
                     // If we encounter another BEGIN:VEVENT while already in an event, we should not process it
-                    return Err(SyntaxError::new("Nested BEGIN:VEVENT found".to_string(), Some(i + 1)).into());
+                    return Err(SyntaxError::new(
+                        "Nested BEGIN:VEVENT found".to_string(),
+                        Some(i + 1),
+                    )
+                    .into());
                 }
 
                 if line.starts_with("END:VEVENT") {
                     // End of the current event, process it
-                    calendar.events.push(Event::from_string(&event_str).map_err(|e| {
-                        if let Some(line_num) = e.line {
-                            dbg!(line_num, i);
-                            e.with_line(line_num + i) // Adjust line number based on current index
-                        } else {
-                            e
-                        }
-                    })?);
+                    calendar
+                        .events
+                        .push(Event::from_string(&event_str).map_err(|e| {
+                            if let Some(line_num) = e.line {
+                                dbg!(line_num, i);
+                                e.with_line(line_num + i) // Adjust line number based on current index
+                            } else {
+                                e
+                            }
+                        })?);
                     in_event = false; // Reset in_event flag
                     continue;
                 }
@@ -123,7 +135,6 @@ impl Calendar {
                 event_str.push('\n');
             }
 
-
             if line.starts_with("BEGIN:VCALENDAR") {
                 continue;
             } else if line.starts_with("END:VCALENDAR") {
@@ -131,7 +142,11 @@ impl Calendar {
             } else if line.starts_with("X-WR-CALNAME:") {
                 calendar.name = line.replace("X-WR-CALNAME:", "").trim().to_string();
             } else if line.starts_with("X-WR-CALDESC:") {
-                calendar.description = line.replace("X-WR-CALDESC:", "").trim().to_string().replace("\\n", "\n");
+                calendar.description = line
+                    .replace("X-WR-CALDESC:", "")
+                    .trim()
+                    .to_string()
+                    .replace("\\n", "\n");
             } else if line.starts_with("METHOD:") {
                 calendar.method = line.replace("METHOD:", "").trim().to_string();
             } else if line.starts_with("VERSION:") {
@@ -175,7 +190,10 @@ impl Calendar {
             calendar_str.push_str(&format!("LAST-MODIFIED:{}\n", event.last_modified));
             calendar_str.push_str(&format!("SUMMARY:{}\n", event.summary));
             calendar_str.push_str(&format!("LOCATION:{}\n", event.location));
-            calendar_str.push_str(&format!("DESCRIPTION:{}\n", event.description.replace("\n", "\\n")));
+            calendar_str.push_str(&format!(
+                "DESCRIPTION:{}\n",
+                event.description.replace("\n", "\\n")
+            ));
             calendar_str.push_str("END:VEVENT\n");
         }
 
@@ -183,4 +201,3 @@ impl Calendar {
         calendar_str
     }
 }
-

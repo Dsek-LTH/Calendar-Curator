@@ -1,62 +1,70 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
-  PlusIcon,
-  TrashIcon,
-  FilterIcon,
-  ScaleIcon,
-  EditIcon,
   CheckIcon,
-  XIcon,
-  GripVerticalIcon,
-  ChevronUpIcon,
   ChevronDownIcon,
-} from "lucide-react"
+  ChevronUpIcon,
+  EditIcon,
+  FilterIcon,
+  GripVerticalIcon,
+  PlusIcon,
+  ScaleIcon,
+  TrashIcon,
+  XIcon,
+} from "lucide-react";
 
 export interface FilterCondition {
-  id: string
-  field: "title" | "description" | "location" | "organizer"
-  operator: "contains" | "equals" | "starts_with" | "ends_with" | "not_contains"
-  value: string
+  id: string;
+  field: "title" | "description" | "location" | "organizer";
+  operator:
+    | "contains"
+    | "equals"
+    | "starts_with"
+    | "ends_with"
+    | "not_contains";
+  value: string;
 }
 
 export interface FilterRule {
-  id: string
-  conditions: FilterCondition[]
-  conditionsOperator: "AND" | "OR"
-  action: "block" | "highlight" | "hide" | "substitute"
-  negated: boolean
+  id: string;
+  conditions: FilterCondition[];
+  conditionsOperator: "AND" | "OR";
+  action: "block" | "highlight" | "hide" | "substitute";
+  negated: boolean;
   // For substitute action
-  substituteFrom?: string
-  substituteTo?: string
-  substituteField?: "title" | "description" | "location" | "organizer"
+  substituteFrom?: string;
+  substituteTo?: string;
+  substituteField?: "title" | "description" | "location" | "organizer";
 }
 
 interface FilterRulesPanelProps {
-  rules: FilterRule[]
-  onRulesChange: (rules: FilterRule[]) => void
+  rules: FilterRule[];
+  onRulesChange: (rules: FilterRule[]) => void;
 }
 
-export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps) {
+export function FilterRulesPanel({
+                                   rules,
+                                   onRulesChange,
+                                 }: FilterRulesPanelProps) {
   const [newRule, setNewRule] = useState<Partial<FilterRule>>({
     conditions: [],
     conditionsOperator: "AND",
     action: "block",
     negated: false,
     substituteField: "title",
-  })
+  });
 
-  const [editingRule, setEditingRule] = useState<string | null>(null)
-  const [editRule, setEditRule] = useState<Partial<FilterRule>>({})
+  const [editingRule, setEditingRule] = useState<string | null>(null);
+  const [editRule, setEditRule] = useState<Partial<FilterRule>>({});
 
   const addConditionToNewRule = () => {
     const newCondition: FilterCondition = {
@@ -64,26 +72,33 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       field: "title",
       operator: "contains",
       value: "",
-    }
+    };
     setNewRule({
       ...newRule,
       conditions: [...(newRule.conditions || []), newCondition],
-    })
-  }
+    });
+  };
 
   const removeConditionFromNewRule = (conditionId: string) => {
     setNewRule({
       ...newRule,
-      conditions: (newRule.conditions || []).filter((c) => c.id !== conditionId),
-    })
-  }
+      conditions: (newRule.conditions || []).filter(
+        (c) => c.id !== conditionId,
+      ),
+    });
+  };
 
-  const updateNewRuleCondition = (conditionId: string, updates: Partial<FilterCondition>) => {
+  const updateNewRuleCondition = (
+    conditionId: string,
+    updates: Partial<FilterCondition>,
+  ) => {
     setNewRule({
       ...newRule,
-      conditions: (newRule.conditions || []).map((c) => (c.id === conditionId ? { ...c, ...updates } : c)),
-    })
-  }
+      conditions: (newRule.conditions || []).map((c) =>
+        c.id === conditionId ? { ...c, ...updates } : c,
+      ),
+    });
+  };
 
   const addConditionToEditRule = () => {
     const newCondition: FilterCondition = {
@@ -91,30 +106,41 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       field: "title",
       operator: "contains",
       value: "",
-    }
+    };
     setEditRule({
       ...editRule,
       conditions: [...(editRule.conditions || []), newCondition],
-    })
-  }
+    });
+  };
 
   const removeConditionFromEditRule = (conditionId: string) => {
     setEditRule({
       ...editRule,
-      conditions: (editRule.conditions || []).filter((c) => c.id !== conditionId),
-    })
-  }
+      conditions: (editRule.conditions || []).filter(
+        (c) => c.id !== conditionId,
+      ),
+    });
+  };
 
-  const updateEditRuleCondition = (conditionId: string, updates: Partial<FilterCondition>) => {
+  const updateEditRuleCondition = (
+    conditionId: string,
+    updates: Partial<FilterCondition>,
+  ) => {
     setEditRule({
       ...editRule,
-      conditions: (editRule.conditions || []).map((c) => (c.id === conditionId ? { ...c, ...updates } : c)),
-    })
-  }
+      conditions: (editRule.conditions || []).map((c) =>
+        c.id === conditionId ? { ...c, ...updates } : c,
+      ),
+    });
+  };
 
   const addRule = () => {
-    if (newRule.action === "substitute" && (!newRule.substituteFrom?.trim() || !newRule.substituteTo?.trim())) return
-    if (newRule.conditions?.some((c) => !c.value?.trim())) return
+    if (
+      newRule.action === "substitute" &&
+      (!newRule.substituteFrom?.trim() || !newRule.substituteTo?.trim())
+    )
+      return;
+    if (newRule.conditions?.some((c) => !c.value?.trim())) return;
 
     const rule: FilterRule = {
       id: Date.now().toString(),
@@ -125,69 +151,73 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       substituteFrom: newRule.substituteFrom?.trim(),
       substituteTo: newRule.substituteTo?.trim(),
       substituteField: newRule.substituteField as FilterRule["substituteField"],
-    }
+    };
 
-    onRulesChange([...rules, rule])
+    onRulesChange([...rules, rule]);
     setNewRule({
       conditions: [],
       conditionsOperator: "AND",
       action: "block",
       negated: false,
       substituteField: "title",
-    })
-  }
+    });
+  };
 
   const startEditRule = (rule: FilterRule) => {
-    setEditingRule(rule.id)
-    setEditRule(rule)
-  }
+    setEditingRule(rule.id);
+    setEditRule(rule);
+  };
 
   const saveEditRule = () => {
-    if (!editingRule) return
+    if (!editingRule) return;
 
     const updatedRules = rules.map((rule) =>
       rule.id === editingRule ? ({ ...rule, ...editRule } as FilterRule) : rule,
-    )
-    onRulesChange(updatedRules)
-    setEditingRule(null)
-    setEditRule({})
-  }
+    );
+    onRulesChange(updatedRules);
+    setEditingRule(null);
+    setEditRule({});
+  };
 
   const cancelEditRule = () => {
-    setEditingRule(null)
-    setEditRule({})
-  }
+    setEditingRule(null);
+    setEditRule({});
+  };
 
   const removeRule = (ruleId: string) => {
-    onRulesChange(rules.filter((rule) => rule.id !== ruleId))
-  }
+    onRulesChange(rules.filter((rule) => rule.id !== ruleId));
+  };
 
   const moveRuleUp = (index: number) => {
-    if (index === 0) return
-    const newRules = [...rules]
-    const temp = newRules[index]
-    newRules[index] = newRules[index - 1]
-    newRules[index - 1] = temp
-    onRulesChange(newRules)
-  }
+    if (index === 0) return;
+    const newRules = [...rules];
+    const temp = newRules[index];
+    newRules[index] = newRules[index - 1];
+    newRules[index - 1] = temp;
+    onRulesChange(newRules);
+  };
 
   const moveRuleDown = (index: number) => {
-    if (index === rules.length - 1) return
-    const newRules = [...rules]
-    const temp = newRules[index]
-    newRules[index] = newRules[index + 1]
-    newRules[index + 1] = temp
-    onRulesChange(newRules)
-  }
+    if (index === rules.length - 1) return;
+    const newRules = [...rules];
+    const temp = newRules[index];
+    newRules[index] = newRules[index + 1];
+    newRules[index + 1] = temp;
+    onRulesChange(newRules);
+  };
 
   const toggleRuleLogicOperator = (ruleId: string) => {
     const updatedRules = rules.map((rule) =>
       rule.id === ruleId
-        ? ({ ...rule, conditionsOperator: rule.conditionsOperator === "AND" ? "OR" : "AND" } as FilterRule)
+        ? ({
+          ...rule,
+          conditionsOperator:
+            rule.conditionsOperator === "AND" ? "OR" : "AND",
+        } as FilterRule)
         : rule,
-    )
-    onRulesChange(updatedRules)
-  }
+    );
+    onRulesChange(updatedRules);
+  };
 
   const getFieldLabel = (field: FilterCondition["field"]) => {
     const labels = {
@@ -195,9 +225,9 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       description: "Description",
       location: "Location",
       organizer: "Organizer",
-    }
-    return labels[field]
-  }
+    };
+    return labels[field];
+  };
 
   const getOperatorLabel = (operator: FilterCondition["operator"]) => {
     const labels = {
@@ -206,9 +236,9 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       starts_with: "starts with",
       ends_with: "ends with",
       not_contains: "does not contain",
-    }
-    return labels[operator]
-  }
+    };
+    return labels[operator];
+  };
 
   const getActionColor = (action: FilterRule["action"]) => {
     const colors = {
@@ -216,19 +246,25 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
       highlight: "default",
       hide: "secondary",
       substitute: "outline",
-    } as const
-    return colors[action]
-  }
+    } as const;
+    return colors[action];
+  };
 
   const renderRuleDescription = (rule: FilterRule) => {
     if (rule.action === "substitute") {
       return (
         <div className="text-sm">
           <span className="font-medium">Substitute</span>
-          <span className="text-muted-foreground mx-1">"{rule.substituteFrom}"</span>
+          <span className="text-muted-foreground mx-1">
+            "{rule.substituteFrom}"
+          </span>
           <span className="text-muted-foreground">with</span>
-          <span className="text-muted-foreground mx-1">"{rule.substituteTo}"</span>
-          <span className="text-muted-foreground">in {getFieldLabel(rule.substituteField || "title")}</span>
+          <span className="text-muted-foreground mx-1">
+            "{rule.substituteTo}"
+          </span>
+          <span className="text-muted-foreground">
+            in {getFieldLabel(rule.substituteField || "title")}
+          </span>
           {rule.conditions.length > 0 && (
             <>
               <span className="text-muted-foreground mx-1">when</span>
@@ -243,22 +279,28 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                       {rule.conditionsOperator}
                     </Badge>
                   )}
-                  <span className="font-medium">{getFieldLabel(condition.field)}</span>
-                  <span className="text-muted-foreground mx-1">{getOperatorLabel(condition.operator)}</span>
+                  <span className="font-medium">
+                    {getFieldLabel(condition.field)}
+                  </span>
+                  <span className="text-muted-foreground mx-1">
+                    {getOperatorLabel(condition.operator)}
+                  </span>
                   <span className="font-medium">"{condition.value}"</span>
                 </span>
               ))}
             </>
           )}
         </div>
-      )
+      );
     }
 
     return (
       <div className="text-sm">
         {rule.negated && <span className="text-red-500 font-medium">NOT </span>}
         {rule.conditions.length === 0 ? (
-          <span className="text-muted-foreground italic">No conditions (applies to all events)</span>
+          <span className="text-muted-foreground italic">
+            No conditions (applies to all events)
+          </span>
         ) : (
           rule.conditions.map((condition, index) => (
             <span key={condition.id}>
@@ -271,15 +313,19 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                   {rule.conditionsOperator}
                 </Badge>
               )}
-              <span className="font-medium">{getFieldLabel(condition.field)}</span>
-              <span className="text-muted-foreground mx-1">{getOperatorLabel(condition.operator)}</span>
+              <span className="font-medium">
+                {getFieldLabel(condition.field)}
+              </span>
+              <span className="text-muted-foreground mx-1">
+                {getOperatorLabel(condition.operator)}
+              </span>
               <span className="font-medium">"{condition.value}"</span>
             </span>
           ))
         )}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Card>
@@ -301,7 +347,9 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
             <Checkbox
               id="negate"
               checked={newRule.negated}
-              onCheckedChange={(checked) => setNewRule({ ...newRule, negated: checked as boolean })}
+              onCheckedChange={(checked) =>
+                setNewRule({ ...newRule, negated: checked as boolean })
+              }
             />
             <Label htmlFor="negate" className="text-sm">
               Negate this rule (NOT)
@@ -310,13 +358,19 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
 
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">Conditions (optional):</Label>
+              <Label className="text-sm font-medium">
+                Conditions (optional):
+              </Label>
               {(newRule.conditions?.length || 0) > 1 && (
                 <Badge
                   variant="outline"
                   className="cursor-pointer hover:bg-muted"
                   onClick={() =>
-                    setNewRule({ ...newRule, conditionsOperator: newRule.conditionsOperator === "AND" ? "OR" : "AND" })
+                    setNewRule({
+                      ...newRule,
+                      conditionsOperator:
+                        newRule.conditionsOperator === "AND" ? "OR" : "AND",
+                    })
                   }
                 >
                   {newRule.conditionsOperator}
@@ -338,7 +392,9 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                     <Select
                       value={condition.field}
                       onValueChange={(value) =>
-                        updateNewRuleCondition(condition.id, { field: value as FilterCondition["field"] })
+                        updateNewRuleCondition(condition.id, {
+                          field: value as FilterCondition["field"],
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -355,7 +411,9 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                     <Select
                       value={condition.operator}
                       onValueChange={(value) =>
-                        updateNewRuleCondition(condition.id, { operator: value as FilterCondition["operator"] })
+                        updateNewRuleCondition(condition.id, {
+                          operator: value as FilterCondition["operator"],
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -366,24 +424,39 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                         <SelectItem value="equals">equals</SelectItem>
                         <SelectItem value="starts_with">starts with</SelectItem>
                         <SelectItem value="ends_with">ends with</SelectItem>
-                        <SelectItem value="not_contains">does not contain</SelectItem>
+                        <SelectItem value="not_contains">
+                          does not contain
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <Input
                     placeholder="Enter value..."
                     value={condition.value}
-                    onChange={(e) => updateNewRuleCondition(condition.id, { value: e.target.value })}
+                    onChange={(e) =>
+                      updateNewRuleCondition(condition.id, {
+                        value: e.target.value,
+                      })
+                    }
                     className="flex-1"
                   />
-                  <Button variant="ghost" size="sm" onClick={() => removeConditionFromNewRule(condition.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeConditionFromNewRule(condition.id)}
+                  >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ))}
 
-            <Button variant="outline" size="sm" onClick={addConditionToNewRule} className="w-full bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addConditionToNewRule}
+              className="w-full bg-transparent"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Condition
             </Button>
@@ -392,7 +465,12 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
           <div className="flex items-center gap-2">
             <Select
               value={newRule.action}
-              onValueChange={(value) => setNewRule({ ...newRule, action: value as FilterRule["action"] })}
+              onValueChange={(value) =>
+                setNewRule({
+                  ...newRule,
+                  action: value as FilterRule["action"],
+                })
+              }
             >
               <SelectTrigger className="flex-1">
                 <SelectValue />
@@ -409,7 +487,8 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
               onClick={addRule}
               disabled={
                 (newRule.action === "substitute" &&
-                  (!newRule.substituteFrom?.trim() || !newRule.substituteTo?.trim())) ||
+                  (!newRule.substituteFrom?.trim() ||
+                    !newRule.substituteTo?.trim())) ||
                 newRule.conditions?.some((c) => !c.value?.trim())
               }
             >
@@ -419,23 +498,32 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
 
           {newRule.action === "substitute" && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Substitution Settings</Label>
+              <Label className="text-sm font-medium">
+                Substitution Settings
+              </Label>
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   placeholder="From (text to replace)"
                   value={newRule.substituteFrom || ""}
-                  onChange={(e) => setNewRule({ ...newRule, substituteFrom: e.target.value })}
+                  onChange={(e) =>
+                    setNewRule({ ...newRule, substituteFrom: e.target.value })
+                  }
                 />
                 <Input
                   placeholder="To (replacement text)"
                   value={newRule.substituteTo || ""}
-                  onChange={(e) => setNewRule({ ...newRule, substituteTo: e.target.value })}
+                  onChange={(e) =>
+                    setNewRule({ ...newRule, substituteTo: e.target.value })
+                  }
                 />
               </div>
               <Select
                 value={newRule.substituteField}
                 onValueChange={(value) =>
-                  setNewRule({ ...newRule, substituteField: value as FilterRule["substituteField"] })
+                  setNewRule({
+                    ...newRule,
+                    substituteField: value as FilterRule["substituteField"],
+                  })
                 }
               >
                 <SelectTrigger>
@@ -470,7 +558,12 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             checked={editRule.negated}
-                            onCheckedChange={(checked) => setEditRule({ ...editRule, negated: checked as boolean })}
+                            onCheckedChange={(checked) =>
+                              setEditRule({
+                                ...editRule,
+                                negated: checked as boolean,
+                              })
+                            }
                           />
                           <Label className="text-sm">Negate</Label>
                         </div>
@@ -481,18 +574,32 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                               <Input
                                 placeholder="From"
                                 value={editRule.substituteFrom || ""}
-                                onChange={(e) => setEditRule({ ...editRule, substituteFrom: e.target.value })}
+                                onChange={(e) =>
+                                  setEditRule({
+                                    ...editRule,
+                                    substituteFrom: e.target.value,
+                                  })
+                                }
                               />
                               <Input
                                 placeholder="To"
                                 value={editRule.substituteTo || ""}
-                                onChange={(e) => setEditRule({ ...editRule, substituteTo: e.target.value })}
+                                onChange={(e) =>
+                                  setEditRule({
+                                    ...editRule,
+                                    substituteTo: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <Select
                               value={editRule.substituteField}
                               onValueChange={(value) =>
-                                setEditRule({ ...editRule, substituteField: value as FilterRule["substituteField"] })
+                                setEditRule({
+                                  ...editRule,
+                                  substituteField:
+                                    value as FilterRule["substituteField"],
+                                })
                               }
                             >
                               <SelectTrigger>
@@ -500,16 +607,24 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="title">Title</SelectItem>
-                                <SelectItem value="description">Description</SelectItem>
-                                <SelectItem value="location">Location</SelectItem>
-                                <SelectItem value="organizer">Organizer</SelectItem>
+                                <SelectItem value="description">
+                                  Description
+                                </SelectItem>
+                                <SelectItem value="location">
+                                  Location
+                                </SelectItem>
+                                <SelectItem value="organizer">
+                                  Organizer
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
-                              <Label className="text-sm font-medium">Conditions:</Label>
+                              <Label className="text-sm font-medium">
+                                Conditions:
+                              </Label>
                               {(editRule.conditions?.length || 0) > 1 && (
                                 <Badge
                                   variant="outline"
@@ -517,7 +632,10 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                                   onClick={() =>
                                     setEditRule({
                                       ...editRule,
-                                      conditionsOperator: editRule.conditionsOperator === "AND" ? "OR" : "AND",
+                                      conditionsOperator:
+                                        editRule.conditionsOperator === "AND"
+                                          ? "OR"
+                                          : "AND",
                                     })
                                   }
                                 >
@@ -526,70 +644,109 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                               )}
                             </div>
 
-                            {editRule.conditions?.map((condition, condIndex) => (
-                              <div key={condition.id} className="space-y-2">
-                                {condIndex > 0 && (
-                                  <div className="flex justify-center">
-                                    <Badge variant="outline" className="text-xs">
-                                      {editRule.conditionsOperator}
-                                    </Badge>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <div className="grid grid-cols-2 gap-2 flex-1">
-                                    <Select
-                                      value={condition.field}
-                                      onValueChange={(value) =>
+                            {editRule.conditions?.map(
+                              (condition, condIndex) => (
+                                <div key={condition.id} className="space-y-2">
+                                  {condIndex > 0 && (
+                                    <div className="flex justify-center">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {editRule.conditionsOperator}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2">
+                                    <div className="grid grid-cols-2 gap-2 flex-1">
+                                      <Select
+                                        value={condition.field}
+                                        onValueChange={(value) =>
+                                          updateEditRuleCondition(
+                                            condition.id,
+                                            {
+                                              field:
+                                                value as FilterCondition["field"],
+                                            },
+                                          )
+                                        }
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="title">
+                                            Title
+                                          </SelectItem>
+                                          <SelectItem value="description">
+                                            Description
+                                          </SelectItem>
+                                          <SelectItem value="location">
+                                            Location
+                                          </SelectItem>
+                                          <SelectItem value="organizer">
+                                            Organizer
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Select
+                                        value={condition.operator}
+                                        onValueChange={(value) =>
+                                          updateEditRuleCondition(
+                                            condition.id,
+                                            {
+                                              operator:
+                                                value as FilterCondition["operator"],
+                                            },
+                                          )
+                                        }
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="contains">
+                                            contains
+                                          </SelectItem>
+                                          <SelectItem value="equals">
+                                            equals
+                                          </SelectItem>
+                                          <SelectItem value="starts_with">
+                                            starts with
+                                          </SelectItem>
+                                          <SelectItem value="ends_with">
+                                            ends with
+                                          </SelectItem>
+                                          <SelectItem value="not_contains">
+                                            does not contain
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <Input
+                                      value={condition.value || ""}
+                                      onChange={(e) =>
                                         updateEditRuleCondition(condition.id, {
-                                          field: value as FilterCondition["field"],
+                                          value: e.target.value,
                                         })
                                       }
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="title">Title</SelectItem>
-                                        <SelectItem value="description">Description</SelectItem>
-                                        <SelectItem value="location">Location</SelectItem>
-                                        <SelectItem value="organizer">Organizer</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Select
-                                      value={condition.operator}
-                                      onValueChange={(value) =>
-                                        updateEditRuleCondition(condition.id, {
-                                          operator: value as FilterCondition["operator"],
-                                        })
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        removeConditionFromEditRule(
+                                          condition.id,
+                                        )
                                       }
                                     >
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="contains">contains</SelectItem>
-                                        <SelectItem value="equals">equals</SelectItem>
-                                        <SelectItem value="starts_with">starts with</SelectItem>
-                                        <SelectItem value="ends_with">ends with</SelectItem>
-                                        <SelectItem value="not_contains">does not contain</SelectItem>
-                                      </SelectContent>
-                                    </Select>
+                                      <TrashIcon className="h-4 w-4"/>
+                                    </Button>
                                   </div>
-                                  <Input
-                                    value={condition.value || ""}
-                                    onChange={(e) => updateEditRuleCondition(condition.id, { value: e.target.value })}
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeConditionFromEditRule(condition.id)}
-                                  >
-                                    <TrashIcon className="h-4 w-4" />
-                                  </Button>
                                 </div>
-                              </div>
-                            ))}
+                              ),
+                            )}
 
                             <Button
                               variant="outline"
@@ -607,7 +764,11 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                           <Button size="sm" onClick={saveEditRule}>
                             <CheckIcon className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={cancelEditRule}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditRule}
+                          >
                             <XIcon className="h-4 w-4" />
                           </Button>
                         </div>
@@ -637,7 +798,10 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                         </div>
                         <div className="flex-1 space-y-1">
                           {renderRuleDescription(rule)}
-                          <Badge variant={getActionColor(rule.action)} className="text-xs">
+                          <Badge
+                            variant={getActionColor(rule.action)}
+                            className="text-xs"
+                          >
                             {rule.action === "block" && "Block"}
                             {rule.action === "highlight" && "Highlight"}
                             {rule.action === "hide" && "Hide"}
@@ -645,10 +809,18 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
                           </Badge>
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => startEditRule(rule)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditRule(rule)}
+                          >
                             <EditIcon className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeRule(rule.id)}
+                          >
                             <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
@@ -663,10 +835,11 @@ export function FilterRulesPanel({ rules, onRulesChange }: FilterRulesPanelProps
 
         {rules.length === 0 && (
           <div className="text-center py-6 text-muted-foreground text-sm">
-            No filter rules created yet. Add rules above to automatically filter events.
+            No filter rules created yet. Add rules above to automatically filter
+            events.
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
