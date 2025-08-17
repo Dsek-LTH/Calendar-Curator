@@ -12,3 +12,6 @@ utoipa = "5.4.0"
 serde = { version = "1.0.219", features = ["derive"] }
 uuid = { version = "1.18.0", features = ["v4"] }
 tokio-util = "0.7.16"
+regex = "1.11.1"
+utoipa-axum = "0.2.0"
+backtrace-on-stack-overflow = "0.3.0"

@@ -1,6 +1,6 @@
-use crate::processing::Calendar;
 use reqwest::{Client, IntoUrl};
 use std::error::Error;
+use crate::processing::processing::Calendar;
 
 pub async fn get_calendar(url: impl IntoUrl) -> Result<Calendar, Box<dyn Error>> {
     let client = Client::new();

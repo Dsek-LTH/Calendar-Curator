@@ -6,14 +6,14 @@ use crate::utils::{parse_datetime, DateFormat};
 
 #[derive(ToSchema, Serialize)]
 pub struct Event {
-    start: Option<DateFormat>,
-    end: Option<DateFormat>,
+    pub(crate) start: Option<DateFormat>,
+    pub(crate) end: Option<DateFormat>,
     uid: String,
     timestamp: String,
     last_modified: String,
-    summary: String,
-    location: String,
-    description: String,
+    pub(crate) summary: String,
+    pub(crate) location: String,
+    pub(crate) description: String,
 }
 
 impl Event {
