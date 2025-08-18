@@ -12,9 +12,9 @@ interface BlockedEventsPanelProps {
 }
 
 export function BlockedEventsPanel({
-                                     events,
-                                     onUnblock,
-                                   }: BlockedEventsPanelProps) {
+  events,
+  onUnblock,
+}: BlockedEventsPanelProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {

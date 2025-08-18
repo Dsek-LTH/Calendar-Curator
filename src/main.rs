@@ -11,7 +11,7 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let socket_address: SocketAddr = "127.0.0.1:8000".parse().unwrap();
+    let socket_address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
     let listener = tokio::net::TcpListener::bind(socket_address).await?;
 
     let cors = CorsLayer::new()

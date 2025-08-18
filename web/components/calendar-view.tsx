@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, EyeOffIcon, } from "lucide-react";
+import {
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EyeOffIcon,
+} from "lucide-react";
 import { EventDetailsModal } from "@/components/event-details-modal";
 import { CalendarEvent } from "@/lib/api";
 
@@ -165,7 +170,7 @@ export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
                                 {formatTime(event.start!!)}
                               </span>
                               {isBlocked && (
-                                <EyeOffIcon className="h-3 w-3 flex-shrink-0"/>
+                                <EyeOffIcon className="h-3 w-3 flex-shrink-0" />
                               )}
                             </div>
                             <div className="truncate">{event.summary}</div>

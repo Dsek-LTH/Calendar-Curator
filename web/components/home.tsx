@@ -5,16 +5,16 @@ import { CalendarIcon } from "lucide-react";
 import { CalendarView } from "@/components/calendar-view";
 import { FilterPanel } from "@/components/filter-panel";
 import { BlockedEventsPanel } from "@/components/blocked-events-panel";
-import { type FilterRule, FilterRulesPanel, } from "@/components/filter-rules-panel";
-import { CalendarEvent, fetchClient } from "@/lib/api";
+import { CalendarEvent, fetchClient, Rule } from "@/lib/api";
 import { CalendarUrlCard } from "@/components/calendar-url-card";
 import { Card, CardContent } from "@/components/ui/card";
+import { RulesPanel } from "@/components/filter-rules-panel";
 
 export function Home() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [filteredEvents, setFilteredEvents] = useState<CalendarEvent[]>([]);
-  const [filterRules, setFilterRules] = useState<FilterRule[]>([]);
+  const [filterRules, setFilterRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,7 +39,7 @@ export function Home() {
     );
   };
 
-  const handleFilterRulesChange = (rules: FilterRule[]) => {
+  const handleFilterRulesChange = (rules: Rule[]) => {
     setFilterRules(rules);
   };
 
@@ -49,7 +49,7 @@ export function Home() {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
-            <CalendarIcon className="h-8 w-8 text-primary"/>
+            <CalendarIcon className="h-8 w-8 text-primary" />
             iCal Stream Filter
           </h1>
           <p className="text-muted-foreground">
@@ -77,9 +77,9 @@ export function Home() {
                 onFilterChangeAction={setFilteredEvents}
               />
               {/* Filter Rules Panel */}
-              <FilterRulesPanel
+              <RulesPanel
                 rules={filterRules}
-                onRulesChange={handleFilterRulesChange}
+                onRulesChangeAction={handleFilterRulesChange}
               />
             </div>
 
@@ -104,7 +104,7 @@ export function Home() {
         {events.length === 0 && !loading && (
           <Card>
             <CardContent className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4"/>
+              <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
                 Enter an iCal URL above to start filtering your calendar
               </p>

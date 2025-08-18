@@ -1,10 +1,21 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, ClockIcon, EyeOffIcon, FileTextIcon, MapPinIcon, } from "lucide-react";
+import {
+  CalendarIcon,
+  ClockIcon,
+  EyeOffIcon,
+  FileTextIcon,
+  MapPinIcon,
+} from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
 
 interface EventDetailsModalProps {
@@ -15,11 +26,11 @@ interface EventDetailsModalProps {
 }
 
 export function EventDetailsModal({
-                                    event,
-                                    isOpen,
-                                    onClose,
-                                    onToggleBlock,
-                                  }: EventDetailsModalProps) {
+  event,
+  isOpen,
+  onClose,
+  onToggleBlock,
+}: EventDetailsModalProps) {
   if (!event) return null;
 
   const formatDateTime = (dateString: string) => {

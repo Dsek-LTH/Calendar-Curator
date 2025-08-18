@@ -83,11 +83,14 @@ pub async fn get_events(Path(id): Path<String>) -> impl IntoResponse {
 
     let blocked_events = db::get_manual_blocks(&id).await.unwrap_or_default();
     let events: Vec<EventResponse> = cal
-        .events
+        .get_events()
         .into_iter()
         .map(|event| {
             let blocked = blocked_events.contains(&event.uid);
-            EventResponse { event, blocked }
+            EventResponse {
+                event: event.clone(),
+                blocked,
+            }
         })
         .collect();
 
@@ -116,11 +119,13 @@ pub async fn get_feed(Path(id): Path<String>) -> impl IntoResponse {
     let url = db::get_url_from_id(&id)
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
-    let Ok(cal) = upstream::get_calendar(url).await else {
+    let Ok(calendar) = upstream::get_calendar(url).await else {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
-    let reader = std::io::Cursor::new(cal.to_string().into_bytes());
+    let ical = calendar.get_filtered_icalendar();
+
+    let reader = std::io::Cursor::new(ical.to_string().into_bytes());
     let stream = ReaderStream::new(reader);
     let body = Body::from_stream(stream);
 

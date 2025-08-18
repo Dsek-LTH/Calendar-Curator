@@ -181,7 +181,9 @@ export interface paths {
     trace?: never;
   };
 }
+
 export type webhooks = Record<string, never>;
+
 export interface components {
   schemas: {
     Action:
@@ -225,23 +227,47 @@ export interface components {
     };
     /** @enum {string} */
     Field: "Summary" | "Description" | "Location" | "StartDate" | "EndDate";
-    FieldTransform: {
-      field: components["schemas"]["Field"];
-      transform: components["schemas"]["Transform"];
-    };
+    FieldTransform:
+      | {
+          Summary: components["schemas"]["StringTransform"];
+        }
+      | {
+          Description: components["schemas"]["StringTransform"];
+        }
+      | {
+          Location: components["schemas"]["StringTransform"];
+        }
+      | {
+          StartDate: components["schemas"]["DateTransform"];
+        }
+      | {
+          EndDate: components["schemas"]["DateTransform"];
+        };
     Filter: {
       /** @description Each inner vector represents a logical AND condition,
        *     while the outer vector represents a logical OR condition. */
       matchers: components["schemas"]["Matcher"][][];
     };
-    /** @enum {string} */
-    MatchType: "Exact" | "Contains" | "StartsWith" | "EndsWith" | "Regex";
+    MatchType:
+      | {
+          Exact: string;
+        }
+      | {
+          Contains: string;
+        }
+      | {
+          StartsWith: string;
+        }
+      | {
+          EndsWith: string;
+        }
+      | {
+          Regex: string;
+        };
     Matcher: {
       field: components["schemas"]["Field"];
-      id: string;
       match_type: components["schemas"]["MatchType"];
       negated: boolean;
-      value: string;
     };
     Rule: {
       action: components["schemas"]["Action"];
@@ -282,13 +308,6 @@ export interface components {
           };
         }
       | "Remove";
-    Transform:
-      | {
-          StringTransform: components["schemas"]["StringTransform"];
-        }
-      | {
-          DateTransform: components["schemas"]["DateTransform"];
-        };
   };
   responses: never;
   parameters: never;
@@ -296,7 +315,9 @@ export interface components {
   headers: never;
   pathItems: never;
 }
+
 export type $defs = Record<string, never>;
+
 export interface operations {
   create_calendar: {
     parameters: {

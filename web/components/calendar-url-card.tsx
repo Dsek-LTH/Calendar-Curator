@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LinkIcon } from "lucide-react";
@@ -17,14 +23,14 @@ interface CalendarUrlCardProps {
 }
 
 export function CalendarUrlCard({
-                                  setEvents,
-                                  setCalendarId,
-                                  setFilteredEvents,
-                                  setLoading,
-                                  setError,
-                                  loading,
-                                  error,
-                                }: CalendarUrlCardProps) {
+  setEvents,
+  setCalendarId,
+  setFilteredEvents,
+  setLoading,
+  setError,
+  loading,
+  error,
+}: CalendarUrlCardProps) {
   const [icalUrl, setIcalUrl] = useState("");
   const [proxyUrl, setProxyUrl] = useState("");
 
@@ -111,7 +117,7 @@ export function CalendarUrlCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <LinkIcon className="h-5 w-5"/>
+          <LinkIcon className="h-5 w-5" />
           Calendar Subscription
         </CardTitle>
         <CardDescription>

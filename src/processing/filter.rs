@@ -1,4 +1,4 @@
-use crate::processing::processing::Event;
+use crate::processing::event::Event;
 use crate::utils::DateFormat;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -14,17 +14,19 @@ pub enum Field {
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
 pub enum MatchType {
-    Exact(String),
-    Contains(String),
-    StartsWith(String),
-    EndsWith(String),
-    Regex(String),
+    Exact,
+    Contains,
+    StartsWith,
+    EndsWith,
+    Regex,
 }
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
 pub struct Matcher {
+    id: String,
     field: Field,
     match_type: MatchType,
+    value: String,
     negated: bool,
 }
 
@@ -43,11 +45,11 @@ impl Matcher {
 
     fn matches_string(&self, value: &str) -> bool {
         match &self.match_type {
-            MatchType::Exact(s) => value == s,
-            MatchType::Contains(s) => value.contains(s),
-            MatchType::StartsWith(s) => value.starts_with(s),
-            MatchType::EndsWith(s) => value.ends_with(s),
-            MatchType::Regex(pattern) => regex::Regex::new(pattern)
+            MatchType::Exact => value == &*self.value,
+            MatchType::Contains => value.contains(&*self.value),
+            MatchType::StartsWith => value.starts_with(&*self.value),
+            MatchType::EndsWith => value.ends_with(&*self.value),
+            MatchType::Regex => regex::Regex::new(&*self.value)
                 .map(|re| re.is_match(value))
                 .unwrap_or(false),
         }

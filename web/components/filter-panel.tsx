@@ -10,9 +10,9 @@ import { FilterIcon, SearchIcon } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
 
 export function FilterPanel({
-                              events,
-                              onFilterChangeAction,
-                            }: {
+  events,
+  onFilterChangeAction,
+}: {
   events: CalendarEvent[];
   onFilterChangeAction: (filteredEvents: CalendarEvent[]) => void;
 }) {
