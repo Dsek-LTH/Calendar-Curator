@@ -1,4 +1,5 @@
 use crate::api::types::EventResponse;
+use crate::db::Calendar;
 use crate::processing::rule::Rule;
 use crate::{db, upstream};
 use axum::Json;
@@ -11,8 +12,6 @@ use tokio_util::io::ReaderStream;
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
-use uuid;
-use uuid::Uuid;
 
 pub(crate) fn router() -> axum::Router {
     let (app_router, openapi) = OpenApiRouter::new()
@@ -24,6 +23,7 @@ pub(crate) fn router() -> axum::Router {
         .routes(routes!(update_rule))
         .routes(routes!(delete_rule))
         .routes(routes!(get_rule))
+        .routes(routes!(reorder_rules))
         .routes(routes!(block_add))
         .routes(routes!(block_remove))
         .routes(routes!(block_list))
@@ -46,6 +46,11 @@ pub struct CreateCalendarResponse {
     id: String,
 }
 
+#[derive(Deserialize, ToSchema)]
+pub struct ReorderRulesRequest {
+    rule_ids: Vec<String>,
+}
+
 #[utoipa::path(
     post,
     path = "/calendars/create",
@@ -57,9 +62,15 @@ pub struct CreateCalendarResponse {
 pub async fn create_calendar(
     calendar_data: Json<CreateCalendar>,
 ) -> Result<Json<CreateCalendarResponse>, StatusCode> {
-    let calendar_id = Uuid::new_v4().to_string();
-    db::add_url_id_mapping(calendar_data.url.clone(), calendar_id.clone()).await;
-    let response = CreateCalendarResponse { id: calendar_id };
+    let icalendar = upstream::get_icalendar(&calendar_data.url)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let calendar = Calendar::from_ical(calendar_data.url.clone(), icalendar);
+
+    let response = CreateCalendarResponse {
+        id: calendar.id.clone(),
+    };
+    db::add_calendar(calendar).await;
     Ok(Json(response))
 }
 
@@ -73,13 +84,8 @@ pub async fn create_calendar(
         (status = 200, description = "Retrieved events for the calendar", body = Vec<EventResponse>),
     )
 )]
-pub async fn get_events(Path(id): Path<String>) -> impl IntoResponse {
-    let url = db::get_url_from_id(&id)
-        .await
-        .ok_or(StatusCode::NOT_FOUND)?;
-    let Ok(cal) = upstream::get_calendar(url).await else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+pub async fn get_events(Path(id): Path<String>) -> Result<Json<Vec<EventResponse>>, StatusCode> {
+    let cal = db::get_calendar(&id).await.ok_or(StatusCode::NOT_FOUND)?;
 
     let blocked_events = db::get_manual_blocks(&id).await.unwrap_or_default();
     let events: Vec<EventResponse> = cal
@@ -87,9 +93,18 @@ pub async fn get_events(Path(id): Path<String>) -> impl IntoResponse {
         .into_iter()
         .map(|event| {
             let blocked = blocked_events.contains(&event.uid);
+            let filtered_by = cal
+                .rules
+                .iter()
+                .filter_map(|rule| {
+                    let (event, matched) = rule.apply(event.clone());
+                    if matched { Some(rule.clone()) } else { None }
+                })
+                .collect::<Vec<Rule>>();
             EventResponse {
                 event: event.clone(),
                 blocked,
+                filtered_by,
             }
         })
         .collect();
@@ -115,13 +130,8 @@ pub async fn get_calendar_url(Path(id): Path<String>) -> impl IntoResponse {
         .ok_or(StatusCode::NOT_FOUND)
 }
 
-pub async fn get_feed(Path(id): Path<String>) -> impl IntoResponse {
-    let url = db::get_url_from_id(&id)
-        .await
-        .ok_or(StatusCode::NOT_FOUND)?;
-    let Ok(calendar) = upstream::get_calendar(url).await else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+pub async fn get_feed(Path(id): Path<String>) -> Result<(HeaderMap, Body), StatusCode> {
+    let calendar = db::get_calendar(&id).await.ok_or(StatusCode::NOT_FOUND)?;
 
     let ical = calendar.get_filtered_icalendar();
 
@@ -155,7 +165,10 @@ pub async fn get_feed(Path(id): Path<String>) -> impl IntoResponse {
 )]
 pub async fn create_rule(Path(id): Path<String>, body: Json<Rule>) -> impl IntoResponse {
     let id = db::add_rule(id.clone(), body.clone().0).await;
-    id
+    match id {
+        Some(id) => Ok(Json(id)),
+        None => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
 }
 
 #[utoipa::path(
@@ -208,15 +221,11 @@ pub async fn update_rule(
     ),
     responses(
         (status = 204, description = "Rule deleted"),
-        (status = 404, description = "Rule not found")
     )
 )]
 pub async fn delete_rule(Path((id, rule_id)): Path<(String, String)>) -> impl IntoResponse {
-    let success = db::delete_rule(&id, &rule_id).await;
-    if !success {
-        return Err(StatusCode::NOT_FOUND);
-    }
-    Ok(StatusCode::NO_CONTENT)
+    db::delete_rule(&id, &rule_id).await;
+    StatusCode::NO_CONTENT
 }
 
 #[utoipa::path(
@@ -238,6 +247,31 @@ pub async fn get_rule(
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(rule))
+}
+
+#[utoipa::path(
+    put,
+    path = "/calendars/{id}/rules/reorder",
+    request_body = ReorderRulesRequest,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "Rules reordered successfully"),
+        (status = 400, description = "Invalid rule order or missing rules"),
+        (status = 404, description = "Calendar not found")
+    )
+)]
+pub async fn reorder_rules(
+    Path(id): Path<String>,
+    body: Json<ReorderRulesRequest>,
+) -> impl IntoResponse {
+    let success = db::reorder_rules(&id, body.rule_ids.clone()).await;
+    if success {
+        Ok(StatusCode::OK)
+    } else {
+        Err(StatusCode::BAD_REQUEST)
+    }
 }
 
 #[utoipa::path(

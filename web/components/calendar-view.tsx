@@ -162,7 +162,16 @@ export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
                                 ? "bg-destructive/20 text-destructive border border-destructive/30"
                                 : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
                             }`}
-                            onClick={() => setSelectedEvent(event)}
+                            onClick={(e) => {
+                              if (e.shiftKey) {
+                                onToggleBlock(event);
+                                e.preventDefault();
+                                window.getSelection()?.removeAllRanges();
+                              } else {
+                                setSelectedEvent(event);
+                              }
+                              e.stopPropagation();
+                            }}
                             title={`${event.summary} - ${formatTime(event.start!!)}`}
                           >
                             <div className="flex items-center justify-between gap-1">

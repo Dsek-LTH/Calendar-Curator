@@ -6,13 +6,18 @@ use utoipa::ToSchema;
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
 pub struct Rule {
+    pub id: String,
     pub filter: Filter,
     pub action: Action,
 }
 
 impl Rule {
     pub fn new(filter: Filter, action: Action) -> Self {
-        Self { filter, action }
+        Self {
+            id: String::new(),
+            filter,
+            action,
+        }
     }
 
     /// Applies the rule to an event.

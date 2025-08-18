@@ -75,8 +75,7 @@ impl StringTransform {
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
 pub enum DateTransform {
-    AddDays { days: i64 },
-    SubtractDays { days: i64 },
+    TimeDiff { seconds: i64 },
 }
 
 impl DateTransform {
@@ -84,15 +83,13 @@ impl DateTransform {
         match date {
             DateFormat::DateTime(dt) => {
                 let new_dt = match self {
-                    DateTransform::AddDays { days } => *dt + Duration::days(*days),
-                    DateTransform::SubtractDays { days } => *dt - Duration::days(*days),
+                    DateTransform::TimeDiff { seconds } => *dt + Duration::seconds(*seconds),
                 };
                 DateFormat::DateTime(new_dt)
             }
             DateFormat::Date(date) => {
                 let new_date = match self {
-                    DateTransform::AddDays { days } => *date + Duration::days(*days),
-                    DateTransform::SubtractDays { days } => *date - Duration::days(*days),
+                    DateTransform::TimeDiff { seconds } => *date + Duration::seconds(*seconds),
                 };
                 DateFormat::Date(new_date)
             }

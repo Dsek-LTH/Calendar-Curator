@@ -19,6 +19,7 @@ pub enum MatchType {
     StartsWith,
     EndsWith,
     Regex,
+    BetweenDates, // Matches events between two dates
 }
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
@@ -52,6 +53,7 @@ impl Matcher {
             MatchType::Regex => regex::Regex::new(&*self.value)
                 .map(|re| re.is_match(value))
                 .unwrap_or(false),
+            MatchType::BetweenDates => false,
         }
     }
 

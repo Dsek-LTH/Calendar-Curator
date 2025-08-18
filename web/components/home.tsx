@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { CalendarIcon } from "lucide-react";
 import { CalendarView } from "@/components/calendar-view";
-import { FilterPanel } from "@/components/filter-panel";
 import { BlockedEventsPanel } from "@/components/blocked-events-panel";
-import { CalendarEvent, fetchClient, Rule } from "@/lib/api";
+import { CalendarEvent, fetchClient } from "@/lib/api";
 import { CalendarUrlCard } from "@/components/calendar-url-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { RulesPanel } from "@/components/filter-rules-panel";
@@ -13,8 +12,6 @@ import { RulesPanel } from "@/components/filter-rules-panel";
 export function Home() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [calendarId, setCalendarId] = useState<string | null>(null);
-  const [filteredEvents, setFilteredEvents] = useState<CalendarEvent[]>([]);
-  const [filterRules, setFilterRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,13 +36,9 @@ export function Home() {
     );
   };
 
-  const handleFilterRulesChange = (rules: Rule[]) => {
-    setFilterRules(rules);
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
@@ -61,7 +54,7 @@ export function Home() {
         <CalendarUrlCard
           setEvents={setEvents}
           setCalendarId={setCalendarId}
-          setFilteredEvents={setFilteredEvents}
+          setFilteredEvents={setEvents}
           setLoading={setLoading}
           setError={setError}
           loading={loading}
@@ -70,33 +63,19 @@ export function Home() {
 
         {events.length > 0 && (
           <div className="grid lg:grid-cols-4 gap-6">
-            {/* Filter Panel */}
             <div className="lg:col-span-1 space-y-6">
-              <FilterPanel
-                events={events}
-                onFilterChangeAction={setFilteredEvents}
-              />
               {/* Filter Rules Panel */}
-              <RulesPanel
-                rules={filterRules}
-                onRulesChangeAction={handleFilterRulesChange}
+              <RulesPanel calendarId={calendarId} />
+              {/* Blocked Events Panel */}
+              <BlockedEventsPanel
+                events={events.filter((e) => e.blocked)}
+                onUnblock={toggleBlockEvent}
               />
             </div>
 
             {/* Calendar View */}
             <div className="lg:col-span-3">
-              <CalendarView
-                events={filteredEvents}
-                onToggleBlock={toggleBlockEvent}
-              />
-            </div>
-
-            {/* Blocked Events Panel */}
-            <div className="lg:col-span-1">
-              <BlockedEventsPanel
-                events={events.filter((e) => e.blocked)}
-                onUnblock={toggleBlockEvent}
-              />
+              <CalendarView events={events} onToggleBlock={toggleBlockEvent} />
             </div>
           </div>
         )}

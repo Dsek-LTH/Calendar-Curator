@@ -1,52 +1,74 @@
+pub(crate) use crate::processing::calendar::Calendar;
+use crate::processing::ical::ICalendar;
 use crate::processing::rule::Rule;
+use crate::upstream;
 use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-static URL_TO_ID: LazyLock<Mutex<HashMap<String, String>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-static RULES: LazyLock<Mutex<HashMap<String, HashMap<String, Rule>>>> =
+static CALENDARS: LazyLock<Mutex<HashMap<String, Calendar>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-static MANUAL_BLOCKS: LazyLock<Mutex<HashMap<String, HashSet<String>>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-
-pub async fn get_url_from_id(id: &str) -> Option<String> {
-    URL_TO_ID.lock().await.get(id).cloned()
+pub async fn add_calendar(mut calendar: Calendar) -> String {
+    let id = calendar.id.clone();
+    // We don't want to store all events in the DB, just the calendar metadata
+    calendar.ical = ICalendar::default();
+    CALENDARS.lock().await.insert(id.clone(), calendar);
+    id
 }
 
-pub async fn add_url_id_mapping(url: String, id: String) {
-    URL_TO_ID.lock().await.insert(id, url);
+pub async fn get_calendar(id: &str) -> Option<Calendar> {
+    let calendars = CALENDARS.lock().await;
+    // Populate the calendar with the iCal
+    let Some(mut calendar) = calendars.get(id).cloned() else {
+        return None;
+    };
+    if let Ok(fresh_ical) = upstream::get_icalendar(&calendar.url).await {
+        calendar.ical = fresh_ical;
+    }
+    Some(calendar)
+}
+pub async fn get_url_from_id(id: &str) -> Option<String> {
+    let calendars = CALENDARS.lock().await;
+    calendars.get(id).map(|cal| cal.url.clone())
 }
 
 // Rule management
 
-pub async fn add_rule(calendar_id: String, rule: Rule) -> String {
-    let id = Uuid::new_v4().to_string();
-    let mut rules = RULES.lock().await;
-    let entry = rules.entry(calendar_id).or_insert_with(HashMap::new);
-    entry.insert(id.clone(), rule);
-    id
+pub async fn add_rule(calendar_id: String, mut rule: Rule) -> Option<String> {
+    rule.id = Uuid::new_v4().to_string();
+    let mut calendars = CALENDARS.lock().await;
+    let calendar = calendars.get_mut(&calendar_id)?;
+
+    let id = rule.id.clone();
+    calendar.add_rule(rule);
+    Some(id)
 }
 
-pub async fn list_rules(calendar_id: &str) -> Option<HashMap<String, Rule>> {
-    let rules = RULES.lock().await;
-    rules.get(calendar_id).cloned()
+pub async fn list_rules(calendar_id: &str) -> Option<Vec<Rule>> {
+    CALENDARS
+        .lock()
+        .await
+        .get(calendar_id)
+        .map(|cal| cal.rules.clone())
 }
 
 pub async fn get_rule(calendar_id: &str, rule_id: &str) -> Option<Rule> {
-    let rules = RULES.lock().await;
-    rules
-        .get(calendar_id)
-        .and_then(|rules| rules.get(rule_id))
-        .cloned()
+    let calendars = CALENDARS.lock().await;
+    calendars.get(calendar_id).and_then(|calendar| {
+        calendar
+            .rules
+            .iter()
+            .find(|rule| rule.id == rule_id)
+            .cloned()
+    })
 }
 
 pub async fn update_rule(calendar_id: &str, rule_id: &str, rule: Rule) -> bool {
-    let mut rules = RULES.lock().await;
-    if let Some(map) = rules.get_mut(calendar_id) {
-        if let Some(existing_rule) = map.get_mut(&rule_id.to_string()) {
+    let mut calendars = CALENDARS.lock().await;
+    if let Some(calendar) = calendars.get_mut(calendar_id) {
+        if let Some(existing_rule) = calendar.rules.iter_mut().find(|rule| rule.id == rule_id) {
             *existing_rule = rule;
             return true;
         }
@@ -54,31 +76,56 @@ pub async fn update_rule(calendar_id: &str, rule_id: &str, rule: Rule) -> bool {
     false
 }
 
-pub async fn delete_rule(calendar_id: &str, rule_id: &str) -> bool {
-    let mut rules = RULES.lock().await;
-    rules
-        .get_mut(calendar_id)
-        .and_then(|map| map.remove(rule_id))
-        .is_some()
+pub async fn delete_rule(calendar_id: &str, rule_id: &str) {
+    let mut calendars = CALENDARS.lock().await;
+    if let Some(calendar) = calendars.get_mut(calendar_id) {
+        calendar.rules.retain(|rule| rule.id != rule_id);
+    }
+}
+
+pub async fn reorder_rules(calendar_id: &str, rule_ids: Vec<String>) -> bool {
+    let mut calendars = CALENDARS.lock().await;
+    if let Some(calendar) = calendars.get_mut(calendar_id) {
+        // Create a map of rule_id to rule for quick lookup
+        let rule_map: HashMap<String, Rule> = calendar
+            .rules
+            .iter()
+            .map(|rule| (rule.id.clone(), rule.clone()))
+            .collect();
+
+        // Rebuild the rules vector in the new order
+        let mut new_rules = Vec::new();
+        for rule_id in rule_ids {
+            if let Some(rule) = rule_map.get(&rule_id) {
+                new_rules.push(rule.clone());
+            }
+        }
+
+        // Only update if we have the same number of rules (no rules lost)
+        if new_rules.len() == calendar.rules.len() {
+            calendar.rules = new_rules;
+            return true;
+        }
+    }
+    false
 }
 
 pub async fn add_manual_block(calendar_id: String, block: String) {
-    let mut manual_blocks = MANUAL_BLOCKS.lock().await;
-    let entry = manual_blocks
-        .entry(calendar_id)
-        .or_insert_with(HashSet::new);
-    entry.insert(block);
+    let mut calendars = CALENDARS.lock().await;
+    if let Some(calendar) = calendars.get_mut(&calendar_id) {
+        calendar.manually_blocked.insert(block);
+    }
 }
 
 pub async fn get_manual_blocks(calendar_id: &str) -> Option<HashSet<String>> {
-    let manual_blocks = MANUAL_BLOCKS.lock().await;
-    manual_blocks.get(calendar_id).cloned()
+    let calendars = CALENDARS.lock().await;
+    Some(calendars.get(calendar_id)?.manually_blocked.clone())
 }
 
 pub async fn remove_manual_block(calendar_id: &str, block: &str) -> bool {
-    let mut manual_blocks = MANUAL_BLOCKS.lock().await;
-    if let Some(blocks) = manual_blocks.get_mut(calendar_id) {
-        blocks.remove(block);
+    let mut calendars = CALENDARS.lock().await;
+    if let Some(calendar) = calendars.get_mut(calendar_id) {
+        calendar.manually_blocked.remove(block);
         return true;
     }
     false

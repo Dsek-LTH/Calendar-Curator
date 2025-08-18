@@ -17,9 +17,9 @@ pub struct ICalendar {
     pub events: Vec<Event>,
 }
 
-impl ICalendar {
-    pub fn from_string(calendar_str: &str) -> Result<ICalendar, Box<dyn Error>> {
-        let mut calendar = ICalendar {
+impl Default for ICalendar {
+    fn default() -> ICalendar {
+        ICalendar {
             name: String::new(),
             description: String::new(),
             method: String::new(),
@@ -28,7 +28,13 @@ impl ICalendar {
             calscale: String::new(),
             published_ttl: String::new(),
             events: Vec::new(),
-        };
+        }
+    }
+}
+
+impl ICalendar {
+    pub fn from_string(calendar_str: &str) -> Result<ICalendar, Box<dyn Error>> {
+        let mut calendar = ICalendar::default();
 
         let mut event_str = String::new();
         let mut in_event = false;

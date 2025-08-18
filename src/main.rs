@@ -21,6 +21,7 @@ async fn main() -> std::io::Result<()> {
             axum::http::Method::POST,
             axum::http::Method::DELETE,
             axum::http::Method::OPTIONS,
+            axum::http::Method::PUT,
         ])
         .allow_headers(Any); // or list specific headers
     let app = axum::Router::new().merge(routes::router()).layer(cors);

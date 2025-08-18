@@ -1,5 +1,6 @@
 use crate::processing::ical::ICalendar;
 use crate::processing::rule::Rule;
+use std::collections::HashSet;
 
 use crate::processing::event::Event;
 use serde::Serialize;
@@ -9,29 +10,27 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct Calendar {
     pub ical: ICalendar,
+    /// Hashmap of rules applied to this calendar. The key is the rule ID.
     pub rules: Vec<Rule>,
     pub id: String,
+    pub url: String,
     /// List of manually blocked event IDs.
-    pub manually_blocked: Vec<String>,
+    pub manually_blocked: HashSet<String>,
 }
 
 impl Calendar {
-    pub fn from_ical(ical: ICalendar) -> Self {
+    pub fn from_ical(url: String, ical: ICalendar) -> Self {
         Calendar {
             ical,
             rules: Vec::new(),
             id: Uuid::new_v4().to_string(),
-            manually_blocked: Vec::new(),
+            url,
+            manually_blocked: HashSet::new(),
         }
     }
 
     pub fn add_rule(&mut self, rule: Rule) {
         self.rules.push(rule);
-    }
-
-    pub fn remove_rule(&mut self, rule_id: String) {
-        // self.rules.retain(|r| r.id != rule_id);
-        todo!()
     }
 
     pub fn get_events_for_proxy(&self) -> Vec<Event> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,19 +25,20 @@ import {
   TrashIcon,
 } from "lucide-react";
 import {
-  Action,
-  Field,
-  FieldTransform,
+  Rule,
   Filter,
   Matcher,
-  Rule,
+  Field,
+  Action,
+  FieldTransform,
   StringTransform,
   Transform,
+  DateTransform,
+  fetchClient,
 } from "@/lib/api";
 
 interface RulesPanelProps {
-  rules: Rule[];
-  onRulesChangeAction: (rules: Rule[]) => void;
+  calendarId: string | null;
 }
 
 // UI state for creating new rules
@@ -45,17 +46,124 @@ interface NewRuleState {
   action: "Block" | "Allow" | "FieldTransform";
   filter: Filter;
   transformField?: Field;
-  transformType?: keyof StringTransform;
+  // Weird typescript issue if I do `keyof StringTransform | keyof DateTransform`
+  transformType?:
+    | "Substitute"
+    | "Suffix"
+    | "Prefix"
+    | "RegexSubstitute"
+    | "Replace"
+    | "Substring"
+    | "Remove"
+    | "TimeDiff";
   transformParams?: any;
 }
 
-export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
+export function RulesPanel({ calendarId }: RulesPanelProps) {
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [newRule, setNewRule] = useState<NewRuleState>({
     action: "Block",
     filter: {
       matchers: [[]],
     },
   });
+
+  // Load rules when calendar ID changes
+  useEffect(() => {
+    if (calendarId) {
+      loadRules();
+    } else {
+      setRules([]);
+    }
+  }, [calendarId]);
+
+  const loadRules = async () => {
+    if (!calendarId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetchClient.GET("/calendars/{id}/rules/list", {
+        params: { path: { id: calendarId } },
+      });
+
+      if (response.data) {
+        setRules(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to load rules:", err);
+      setError("Failed to load rules");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createRule = async (rule: Rule) => {
+    if (!calendarId) return;
+
+    try {
+      await fetchClient.POST("/calendars/{id}/rules/create", {
+        params: { path: { id: calendarId } },
+        body: rule,
+      });
+
+      setRules((prev) => [...prev, { ...rule, id: Date.now().toString() }]);
+
+      // Reload rules after creation
+      await loadRules();
+    } catch (err) {
+      console.error("Failed to create rule:", err);
+      setError("Failed to create rule");
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    if (!calendarId) return;
+
+    try {
+      await fetchClient.DELETE("/calendars/{id}/rules/{rule_id}/delete", {
+        params: { path: { id: calendarId, rule_id: ruleId } },
+      });
+
+      setRules((prev) => prev.filter((rule) => rule.id !== ruleId));
+
+      // Reload rules after deletion
+      await loadRules();
+    } catch (err) {
+      console.error("Failed to delete rule:", err);
+      setError("Failed to delete rule");
+    }
+  };
+
+  const reorderRules = async (fromIndex: number, toIndex: number) => {
+    if (!calendarId || fromIndex === toIndex) return;
+
+    try {
+      // Create new order array
+      const newRules = [...rules];
+      const [movedRule] = newRules.splice(fromIndex, 1);
+      newRules.splice(toIndex, 0, movedRule);
+
+      setRules(newRules);
+
+      // Extract rule IDs in the new order
+      const ruleIds = newRules.map((rule) => rule.id);
+
+      await fetchClient.PUT("/calendars/{id}/rules/reorder", {
+        params: { path: { id: calendarId } },
+        body: { rule_ids: ruleIds },
+      });
+
+      // Reload rules after reordering
+      await loadRules();
+    } catch (err) {
+      console.error("Failed to reorder rules:", err);
+      setError("Failed to reorder rules");
+    }
+  };
 
   const addMatcherToNewRule = (groupIndex: number) => {
     const newMatcher: Matcher = {
@@ -96,8 +204,18 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
     updates: Partial<Matcher>,
   ) => {
     const newMatchers = [...newRule.filter.matchers];
+    const currentMatcher = newMatchers[groupIndex][matcherIndex];
+
+    // If field is being updated to a date field, set match_type to BetweenDates
+    if (
+      updates.field &&
+      (updates.field === "StartDate" || updates.field === "EndDate")
+    ) {
+      updates.match_type = "BetweenDates";
+    }
+
     newMatchers[groupIndex][matcherIndex] = {
-      ...newMatchers[groupIndex][matcherIndex],
+      ...currentMatcher,
       ...updates,
     };
     setNewRule({ ...newRule, filter: { matchers: newMatchers } });
@@ -113,64 +231,88 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
       return "Block"; // fallback
     }
 
-    let stringTransform: StringTransform;
+    let transform: Transform;
 
-    switch (newRule.transformType) {
-      case "Substitute":
-        stringTransform = {
-          Substitute: {
-            from: newRule.transformParams?.from || "",
-            to: newRule.transformParams?.to || "",
-          },
-        };
-        break;
-      case "Suffix":
-        stringTransform = {
-          Suffix: {
-            suffix: newRule.transformParams?.suffix || "",
-          },
-        };
-        break;
-      case "Prefix":
-        stringTransform = {
-          Prefix: {
-            prefix: newRule.transformParams?.prefix || "",
-          },
-        };
-        break;
-      case "RegexSubstitute":
-        stringTransform = {
-          RegexSubstitute: {
-            pattern: newRule.transformParams?.pattern || "",
-            replacement: newRule.transformParams?.replacement || "",
-          },
-        };
-        break;
-      case "Replace":
-        stringTransform = {
-          Replace: {
-            with: newRule.transformParams?.with || "",
-          },
-        };
-        break;
-      case "Substring":
-        stringTransform = {
-          Substring: {
-            start: newRule.transformParams?.start || 0,
-            end: newRule.transformParams?.end || 0,
-          },
-        };
-        break;
-      case "Remove":
-        stringTransform = "Remove";
-        break;
-      default:
-        stringTransform = "Remove";
+    // Handle date transforms
+    if (newRule.transformType === "TimeDiff") {
+      let multiplier = 60;
+      if (newRule.transformParams?.unit === "hours") {
+        multiplier = 3600;
+      } else if (newRule.transformParams?.unit === "days") {
+        multiplier = 86400;
+      }
+      const dateTransform: DateTransform = {
+        TimeDiff: {
+          seconds:
+            (newRule.transformParams?.isNegative ? -1 : 1) *
+            (newRule.transformParams?.value || 0) *
+            multiplier,
+        },
+      };
+      transform = {
+        DateTransform: dateTransform,
+      };
+    } else {
+      // Handle string transforms
+      let stringTransform: StringTransform;
+
+      switch (newRule.transformType) {
+        case "Substitute":
+          stringTransform = {
+            Substitute: {
+              from: newRule.transformParams?.from || "",
+              to: newRule.transformParams?.to || "",
+            },
+          };
+          break;
+        case "Suffix":
+          stringTransform = {
+            Suffix: {
+              suffix: newRule.transformParams?.suffix || "",
+            },
+          };
+          break;
+        case "Prefix":
+          stringTransform = {
+            Prefix: {
+              prefix: newRule.transformParams?.prefix || "",
+            },
+          };
+          break;
+        case "RegexSubstitute":
+          stringTransform = {
+            RegexSubstitute: {
+              pattern: newRule.transformParams?.pattern || "",
+              replacement: newRule.transformParams?.replacement || "",
+            },
+          };
+          break;
+        case "Replace":
+          stringTransform = {
+            Replace: {
+              with: newRule.transformParams?.with || "",
+            },
+          };
+          break;
+        case "Substring":
+          stringTransform = {
+            Substring: {
+              start: newRule.transformParams?.start || 0,
+              end: newRule.transformParams?.end || 0,
+            },
+          };
+          break;
+        case "Remove":
+          stringTransform = "Remove";
+          break;
+        default:
+          stringTransform = "Remove";
+      }
+
+      transform = {
+        StringTransform: stringTransform,
+      };
     }
-
-    const transform: Transform = {
-      StringTransform: stringTransform,
-    };
 
     const fieldTransform: FieldTransform = {
       field: newRule.transformField,
@@ -182,7 +324,7 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
     };
   };
 
-  const addRule = () => {
+  const addRule = async () => {
     if (
       newRule.filter.matchers.some((group) =>
         group.some((matcher) => !matcher.value?.trim()),
@@ -190,13 +332,22 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
     )
       return;
 
+    // Remove empty matcher groups
+    newRule.filter.matchers = newRule.filter.matchers.filter(
+      (group) => group.length > 0,
+    );
+    if (newRule.filter.matchers.length === 0) {
+      newRule.filter.matchers = [[]]; // Ensure at least one group exists
+    }
+
     const action = buildActionFromNewRule();
     const apiRule: Rule = {
       action,
       filter: newRule.filter,
+      id: "",
     };
 
-    onRulesChangeAction([...rules, apiRule]);
+    await createRule(apiRule);
 
     setNewRule({
       action: "Block",
@@ -207,16 +358,24 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
   };
 
   const isAddRuleDisabled = () => {
-    if (
-      newRule.filter.matchers.some((group) =>
-        group.some((matcher) => !matcher.value?.trim()),
-      )
-    )
-      return true;
+    // For date fields, allow empty values - no validation needed
+    const hasInvalidMatchers = newRule.filter.matchers.some((group) =>
+      group.some((matcher) => {
+        // Date fields can have empty values
+        if (matcher.field === "StartDate" || matcher.field === "EndDate") {
+          return false;
+        }
+        // Other fields require non-empty values
+        return !matcher.value?.trim();
+      }),
+    );
+
+    if (hasInvalidMatchers) return true;
 
     if (newRule.action === "FieldTransform") {
       if (!newRule.transformField || !newRule.transformType) return true;
 
+      // @ts-ignore
       switch (newRule.transformType) {
         case "Substitute":
           return (
@@ -241,6 +400,12 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
           );
         case "Remove":
           return false;
+        case "TimeDiff":
+          return (
+            typeof newRule.transformParams?.seconds !== "number" ||
+            Number.isNaN(newRule.transformParams?.seconds) ||
+            newRule.transformParams?.seconds === 0
+          );
         default:
           return true;
       }
@@ -267,6 +432,7 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
       StartsWith: "starts with",
       EndsWith: "ends with",
       Regex: "matches regex",
+      BetweenDates: "is within date range",
     };
     return labels[matchType];
   };
@@ -313,6 +479,33 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
           } else if ("Substring" in stringTransform) {
             return `Extract substring (${stringTransform.Substring.start}-${stringTransform.Substring.end}) from ${field}`;
           }
+        }
+      } else if ("DateTransform" in fieldTransform.transform) {
+        const dateTransform = fieldTransform.transform.DateTransform;
+
+        if ("TimeDiff" in dateTransform) {
+          const seconds = dateTransform.TimeDiff.seconds;
+          const absSeconds = Math.abs(seconds);
+          const isNegative = seconds < 0;
+
+          let amount: number;
+          let unit: string;
+
+          if (absSeconds >= 86400 && absSeconds % 86400 === 0) {
+            amount = absSeconds / 86400;
+            unit = amount === 1 ? "day" : "days";
+          } else if (absSeconds >= 3600 && absSeconds % 3600 === 0) {
+            amount = absSeconds / 3600;
+            unit = amount === 1 ? "hour" : "hours";
+          } else if (absSeconds >= 60 && absSeconds % 60 === 0) {
+            amount = absSeconds / 60;
+            unit = amount === 1 ? "minute" : "minutes";
+          } else {
+            amount = absSeconds;
+            unit = amount === 1 ? "second" : "seconds";
+          }
+
+          return `${isNegative ? "Subtract" : "Add"} ${amount} ${unit} ${isNegative ? "from" : "to"} ${field}`;
         }
       }
     }
@@ -379,6 +572,78 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
       return null;
 
     switch (newRule.transformType) {
+      case "TimeDiff":
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                type="number"
+                placeholder="Amount"
+                value={Math.abs(newRule.transformParams?.value || 0) || ""}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+
+                  setNewRule({
+                    ...newRule,
+                    transformParams: {
+                      ...newRule.transformParams,
+                      value: value,
+                    },
+                  });
+                }}
+              />
+              <Select
+                value={newRule.transformParams?.unit || "minutes"}
+                onValueChange={(value) => {
+                  setNewRule({
+                    ...newRule,
+                    transformParams: {
+                      ...newRule.transformParams,
+                      unit: value as "minutes" | "hours" | "days",
+                    },
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minutes">Minutes</SelectItem>
+                  <SelectItem value="hours">Hours</SelectItem>
+                  <SelectItem value="days">Days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={
+                  newRule.transformParams?.seconds >= 0 ? "add" : "subtract"
+                }
+                onValueChange={(value) => {
+                  setNewRule({
+                    ...newRule,
+                    transformParams: {
+                      ...newRule.transformParams,
+                      isNegative: value === "subtract",
+                    },
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="add">Add</SelectItem>
+                  <SelectItem value="subtract">Subtract</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {newRule.transformParams?.isNegative ? "Subtract" : "Add"}{" "}
+              {newRule.transformParams.value} {newRule.transformParams?.unit}{" "}
+              {newRule.transformParams.isNegative ? "from" : "to"} the selected
+              date field.
+            </div>
+          </div>
+        );
       case "Substitute":
         return (
           <div className="grid grid-cols-2 gap-2">
@@ -542,324 +807,428 @@ export function RulesPanel({ rules, onRulesChangeAction }: RulesPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Add New Rule */}
-        <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <PlusIcon className="h-4 w-4" />
-            Add New Rule
+        {error && (
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+            {error}
           </div>
+        )}
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">
-                Conditions (optional):
-              </Label>
-            </div>
+        {!calendarId && (
+          <div className="text-center py-6 text-muted-foreground text-sm">
+            Please create or load a calendar to manage filter rules.
+          </div>
+        )}
 
-            {newRule.filter.matchers.map((group, groupIndex) => (
-              <div key={groupIndex} className="space-y-2">
-                {groupIndex > 0 && (
-                  <div className="flex justify-center">
-                    <Badge variant="outline" className="text-xs">
-                      OR
-                    </Badge>
-                  </div>
-                )}
+        {calendarId && (
+          <>
+            {/* Add New Rule */}
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <PlusIcon className="h-4 w-4" />
+                Add New Rule
+              </div>
 
-                {group.map((matcher, matcherIndex) => (
-                  <div
-                    key={matcher.id}
-                    className="space-y-2 p-2 border rounded-lg bg-card"
-                  >
-                    {matcherIndex > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">
+                    Conditions (optional):
+                  </Label>
+                </div>
+
+                {newRule.filter.matchers.map((group, groupIndex) => (
+                  <div key={groupIndex} className="space-y-2">
+                    {groupIndex > 0 && (
                       <div className="flex justify-center">
                         <Badge variant="outline" className="text-xs">
-                          AND
+                          OR
                         </Badge>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={matcher.negated}
-                        onCheckedChange={(checked) =>
-                          updateNewRuleMatcher(groupIndex, matcherIndex, {
-                            negated: checked as boolean,
-                          })
-                        }
-                      />
-                      <Label className="text-sm">NOT</Label>
 
-                      <Select
-                        value={matcher.field}
-                        onValueChange={(value) =>
-                          updateNewRuleMatcher(groupIndex, matcherIndex, {
-                            field: value as Field,
-                          })
-                        }
+                    {group.map((matcher, matcherIndex) => (
+                      <div
+                        key={matcher.id}
+                        className="space-y-2 p-2 border rounded-lg bg-card"
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Summary">Title</SelectItem>
-                          <SelectItem value="Description">
-                            Description
-                          </SelectItem>
-                          <SelectItem value="Location">Location</SelectItem>
-                          <SelectItem value="StartDate">Start Date</SelectItem>
-                          <SelectItem value="EndDate">End Date</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        {matcherIndex > 0 && (
+                          <div className="flex justify-center">
+                            <Badge variant="outline" className="text-xs">
+                              AND
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={matcher.negated}
+                            onCheckedChange={(checked) =>
+                              updateNewRuleMatcher(groupIndex, matcherIndex, {
+                                negated: checked as boolean,
+                              })
+                            }
+                          />
+                          <Label className="text-sm">NOT</Label>
 
-                      <div className="grid grid-cols-2 gap-2 flex-1">
-                        <Select
-                          value={matcher.match_type}
-                          onValueChange={(value) =>
-                            updateNewRuleMatcher(groupIndex, matcherIndex, {
-                              match_type: value as Matcher["match_type"],
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Contains">contains</SelectItem>
-                            <SelectItem value="Exact">equals</SelectItem>
-                            <SelectItem value="StartsWith">
-                              starts with
-                            </SelectItem>
-                            <SelectItem value="EndsWith">ends with</SelectItem>
-                            <SelectItem value="Regex">matches regex</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <Select
+                            value={matcher.field}
+                            onValueChange={(value) =>
+                              updateNewRuleMatcher(groupIndex, matcherIndex, {
+                                field: value as Field,
+                              })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Summary">Title</SelectItem>
+                              <SelectItem value="Description">
+                                Description
+                              </SelectItem>
+                              <SelectItem value="Location">Location</SelectItem>
+                              <SelectItem value="StartDate">
+                                Start Date
+                              </SelectItem>
+                              <SelectItem value="EndDate">End Date</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {/* Only show match type selector for non-date fields */}
+                          {matcher.field !== "StartDate" &&
+                            matcher.field !== "EndDate" && (
+                              <div className="grid grid-cols-2 gap-2 flex-1">
+                                <Select
+                                  value={matcher.match_type}
+                                  onValueChange={(value) =>
+                                    updateNewRuleMatcher(
+                                      groupIndex,
+                                      matcherIndex,
+                                      {
+                                        match_type:
+                                          value as Matcher["match_type"],
+                                      },
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Contains">
+                                      contains
+                                    </SelectItem>
+                                    <SelectItem value="Exact">
+                                      equals
+                                    </SelectItem>
+                                    <SelectItem value="StartsWith">
+                                      starts with
+                                    </SelectItem>
+                                    <SelectItem value="EndsWith">
+                                      ends with
+                                    </SelectItem>
+                                    <SelectItem value="Regex">
+                                      matches regex
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Special handling for date fields */}
+                          {matcher.field === "StartDate" ||
+                          matcher.field === "EndDate" ? (
+                            <div className="flex-1 grid grid-cols-2 gap-2">
+                              <Input
+                                type="date"
+                                placeholder="Start date (optional)"
+                                value={matcher.value?.split("|")[0] || ""}
+                                onChange={(e) => {
+                                  const endDate =
+                                    matcher.value?.split("|")[1] || "";
+                                  const newValue = e.target.value
+                                    ? `${e.target.value}|${endDate}`
+                                    : endDate;
+                                  updateNewRuleMatcher(
+                                    groupIndex,
+                                    matcherIndex,
+                                    {
+                                      value: newValue,
+                                    },
+                                  );
+                                }}
+                              />
+                              <Input
+                                type="date"
+                                placeholder="End date (optional)"
+                                value={matcher.value?.split("|")[1] || ""}
+                                onChange={(e) => {
+                                  const startDate =
+                                    matcher.value?.split("|")[0] || "";
+                                  const newValue = e.target.value
+                                    ? `${startDate}|${e.target.value}`
+                                    : startDate;
+                                  updateNewRuleMatcher(
+                                    groupIndex,
+                                    matcherIndex,
+                                    {
+                                      value: newValue,
+                                    },
+                                  );
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <Input
+                              placeholder="Enter value..."
+                              value={matcher.value}
+                              onChange={(e) =>
+                                updateNewRuleMatcher(groupIndex, matcherIndex, {
+                                  value: e.target.value,
+                                })
+                              }
+                              className="flex-1"
+                            />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              removeMatcherFromNewRule(groupIndex, matcherIndex)
+                            }
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="Enter value..."
-                        value={matcher.value}
-                        onChange={(e) =>
-                          updateNewRuleMatcher(groupIndex, matcherIndex, {
-                            value: e.target.value,
-                          })
-                        }
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          removeMatcherFromNewRule(groupIndex, matcherIndex)
-                        }
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    ))}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addMatcherToNewRule(groupIndex)}
+                      className="w-full bg-transparent"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Add AND Condition
+                    </Button>
                   </div>
                 ))}
 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => addMatcherToNewRule(groupIndex)}
+                  onClick={addMatcherGroupToNewRule}
                   className="w-full bg-transparent"
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Add AND Condition
+                  Add OR Group
                 </Button>
               </div>
-            ))}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={addMatcherGroupToNewRule}
-              className="w-full bg-transparent"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add OR Group
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Select
-              value={newRule.action}
-              onValueChange={(value: "Block" | "Allow" | "FieldTransform") => {
-                setNewRule({
-                  ...newRule,
-                  action: value,
-                  transformField:
-                    value === "FieldTransform" ? "Summary" : undefined,
-                  transformType:
-                    value === "FieldTransform"
-                      ? ("Substitute" as keyof StringTransform)
-                      : undefined,
-                  transformParams: undefined,
-                });
-              }}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Block">Block Event</SelectItem>
-                <SelectItem value="Allow">Allow Event</SelectItem>
-                <SelectItem value="FieldTransform">Transform Field</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button onClick={addRule} disabled={isAddRuleDisabled()}>
-              Add Rule
-            </Button>
-          </div>
-
-          {newRule.action === "FieldTransform" && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">
-                Field Transform Settings
-              </Label>
-
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2">
                 <Select
-                  value={newRule.transformField}
-                  onValueChange={(value) =>
+                  value={newRule.action}
+                  onValueChange={(
+                    value: "Block" | "Allow" | "FieldTransform",
+                  ) => {
                     setNewRule({
                       ...newRule,
-                      transformField: value as Field,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Field to transform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Summary">Title</SelectItem>
-                    <SelectItem value="Description">Description</SelectItem>
-                    <SelectItem value="Location">Location</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={newRule.transformType}
-                  onValueChange={(value) =>
-                    setNewRule({
-                      ...newRule,
-                      transformType: value as keyof StringTransform,
+                      action: value,
+                      transformField:
+                        value === "FieldTransform" ? "Summary" : undefined,
+                      transformType:
+                        value === "FieldTransform"
+                          ? ("Substitute" as keyof StringTransform)
+                          : undefined,
                       transformParams: undefined,
-                    })
-                  }
+                    });
+                  }}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Transform type" />
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Substitute">Find & Replace</SelectItem>
-                    <SelectItem value="RegexSubstitute">
-                      Regex Replace
+                    <SelectItem value="Block">Block Event</SelectItem>
+                    <SelectItem value="Allow">Allow Event</SelectItem>
+                    <SelectItem value="FieldTransform">
+                      Transform Field
                     </SelectItem>
-                    <SelectItem value="Prefix">Add Prefix</SelectItem>
-                    <SelectItem value="Suffix">Add Suffix</SelectItem>
-                    <SelectItem value="Replace">
-                      Replace Entire Field
-                    </SelectItem>
-                    <SelectItem value="Substring">Extract Substring</SelectItem>
-                    <SelectItem value="Remove">Remove Field</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Button
+                  onClick={addRule}
+                  disabled={isAddRuleDisabled() || loading}
+                >
+                  {loading ? "Adding..." : "Add Rule"}
+                </Button>
               </div>
 
-              {renderTransformParams()}
-            </div>
-          )}
-        </div>
+              {newRule.action === "FieldTransform" && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">
+                    Field Transform Settings
+                  </Label>
 
-        {/* Existing Rules */}
-        {rules.length > 0 && (
-          <>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <FilterIcon className="h-4 w-4" />
-                Active Rules
-              </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={newRule.transformField}
+                      onValueChange={(value) =>
+                        setNewRule({
+                          ...newRule,
+                          transformField: value as Field,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Field to transform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Summary">Title</SelectItem>
+                        <SelectItem value="Description">Description</SelectItem>
+                        <SelectItem value="Location">Location</SelectItem>
+                        <SelectItem value="StartDate">Start Date</SelectItem>
+                        <SelectItem value="EndDate">End Date</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-              {rules.map((rule, index) => {
-                return (
-                  <div key={index}>
-                    <div className="flex items-center gap-2 p-3 border rounded-lg bg-card">
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (index === 0) return;
-                            const newRules = [...rules];
-                            const temp = newRules[index];
-                            newRules[index] = newRules[index - 1];
-                            newRules[index - 1] = temp;
-                            onRulesChangeAction(newRules);
-                          }}
-                          disabled={index === 0}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ChevronUpIcon className="h-3 w-3" />
-                        </Button>
-                        <GripVerticalIcon className="h-4 w-4 text-muted-foreground" />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (index === rules.length - 1) return;
-                            const newRules = [...rules];
-                            const temp = newRules[index];
-                            newRules[index] = newRules[index + 1];
-                            newRules[index + 1] = temp;
-                            onRulesChangeAction(newRules);
-                          }}
-                          disabled={index === rules.length - 1}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ChevronDownIcon className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        {renderRuleDescription(rule)}
-                        <Badge
-                          variant={getActionColor(rule.action)}
-                          className="text-xs"
-                        >
-                          {rule.action === "Block" && "Block"}
-                          {rule.action === "Allow" && "Allow"}
-                          {typeof rule.action === "object" && "Field Transform"}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            onRulesChangeAction(
-                              rules.filter((_, i) => i !== index),
-                            )
-                          }
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <Select
+                      value={newRule.transformType}
+                      onValueChange={(value) =>
+                        setNewRule({
+                          ...newRule,
+                          transformType: value as
+                            | keyof StringTransform
+                            | "TimeDiff",
+                          transformParams: undefined,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Transform type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* String transforms for text fields */}
+                        {newRule.transformField &&
+                          !["StartDate", "EndDate"].includes(
+                            newRule.transformField,
+                          ) && (
+                            <>
+                              <SelectItem value="Substitute">
+                                Find & Replace
+                              </SelectItem>
+                              <SelectItem value="RegexSubstitute">
+                                Regex Replace
+                              </SelectItem>
+                              <SelectItem value="Prefix">Add Prefix</SelectItem>
+                              <SelectItem value="Suffix">Add Suffix</SelectItem>
+                              <SelectItem value="Replace">
+                                Replace Entire Field
+                              </SelectItem>
+                              <SelectItem value="Substring">
+                                Extract Substring
+                              </SelectItem>
+                              <SelectItem value="Remove">
+                                Remove Field
+                              </SelectItem>
+                            </>
+                          )}
+                        {/* Date transforms for date fields */}
+                        {newRule.transformField &&
+                          ["StartDate", "EndDate"].includes(
+                            newRule.transformField,
+                          ) && (
+                            <SelectItem value="TimeDiff">
+                              Add/Subtract Time
+                            </SelectItem>
+                          )}
+                      </SelectContent>
+                    </Select>
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
 
-        {rules.length === 0 && (
-          <div className="text-center py-6 text-muted-foreground text-sm">
-            No filter rules created yet. Add rules above to automatically filter
-            events.
-          </div>
+                  {renderTransformParams()}
+                </div>
+              )}
+            </div>
+
+            {/* Existing Rules */}
+            {rules.length > 0 ? (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <FilterIcon className="h-4 w-4" />
+                    Active Rules
+                  </div>
+
+                  <div className="overflow-auto max-h-[600px] space-y-3">
+                    {rules.map((rule, index) => {
+                      return (
+                        <div key={rule.id}>
+                          <div className="flex items-center gap-2 p-3 border rounded-lg bg-card">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (index === 0) return;
+                                  reorderRules(index, index - 1);
+                                }}
+                                disabled={index === 0 || loading}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronUpIcon className="h-3 w-3" />
+                              </Button>
+                              <GripVerticalIcon className="h-4 w-4 text-muted-foreground" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (index === rules.length - 1) return;
+                                  reorderRules(index, index + 1);
+                                }}
+                                disabled={index === rules.length - 1 || loading}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronDownIcon className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              {renderRuleDescription(rule)}
+                              <Badge
+                                variant={getActionColor(rule.action)}
+                                className="text-xs"
+                              >
+                                {rule.action === "Block" && "Block"}
+                                {rule.action === "Allow" && "Allow"}
+                                {typeof rule.action === "object" &&
+                                  "Field Transform"}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteRule(rule.id)}
+                                disabled={loading}
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground text-sm">
+                No filter rules created yet. Add rules above to automatically
+                filter events.
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

@@ -132,6 +132,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/calendars/{id}/rules/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations["reorder_rules"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/calendars/{id}/rules/{rule_id}/delete": {
     parameters: {
       query?: never;
@@ -197,19 +213,12 @@ export interface components {
       id: string;
     };
     DateFormat: string;
-    DateTransform:
-      | {
-          AddDays: {
-            /** Format: int64 */
-            days: number;
-          };
-        }
-      | {
-          SubtractDays: {
-            /** Format: int64 */
-            days: number;
-          };
-        };
+    DateTransform: {
+      TimeDiff: {
+        /** Format: int64 */
+        seconds: number;
+      };
+    };
     Event: {
       description: string;
       end?: null | components["schemas"]["DateFormat"];
@@ -222,6 +231,7 @@ export interface components {
     };
     EventResponse: components["schemas"]["Event"] & {
       blocked: boolean;
+      filtered_by: components["schemas"]["Rule"][];
     };
     /** @enum {string} */
     Field: "Summary" | "Description" | "Location" | "StartDate" | "EndDate";
@@ -235,7 +245,13 @@ export interface components {
       matchers: components["schemas"]["Matcher"][][];
     };
     /** @enum {string} */
-    MatchType: "Exact" | "Contains" | "StartsWith" | "EndsWith" | "Regex";
+    MatchType:
+      | "Exact"
+      | "Contains"
+      | "StartsWith"
+      | "EndsWith"
+      | "Regex"
+      | "BetweenDates";
     Matcher: {
       field: components["schemas"]["Field"];
       id: string;
@@ -243,9 +259,13 @@ export interface components {
       negated: boolean;
       value: string;
     };
+    ReorderRulesRequest: {
+      rule_ids: string[];
+    };
     Rule: {
       action: components["schemas"]["Action"];
       filter: components["schemas"]["Filter"];
+      id: string;
     };
     StringTransform:
       | {
@@ -513,6 +533,45 @@ export interface operations {
       };
     };
   };
+  reorder_rules: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReorderRulesRequest"];
+      };
+    };
+    responses: {
+      /** @description Rules reordered successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid rule order or missing rules */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Calendar not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   delete_rule: {
     parameters: {
       query?: never;
@@ -529,13 +588,6 @@ export interface operations {
     responses: {
       /** @description Rule deleted */
       204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Rule not found */
-      404: {
         headers: {
           [name: string]: unknown;
         };
