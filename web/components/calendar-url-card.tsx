@@ -85,7 +85,7 @@ export function CalendarUrlCard({
           if (res.response.ok && res.data) {
             setIcalUrl(res.data);
             loadCalendar(res.data, calendarId);
-            setProxyUrl(`/calendars/${calendarId}/feed`);
+            setProxyUrl(`/api/calendars/${calendarId}/feed`);
             if (typeof window !== "undefined") {
               window.history.replaceState(
                 null,
@@ -162,7 +162,7 @@ export function CalendarUrlCard({
 
       setEvents(eventsData || []);
       setFilteredEvents(eventsData || []);
-      setProxyUrl(`/calendars/${calendar_id}/feed`);
+      setProxyUrl(`/api/calendars/${calendar_id}/feed`);
       if (window !== undefined) {
         window.history.replaceState(null, "", `?calendarId=${calendar_id}`);
       }

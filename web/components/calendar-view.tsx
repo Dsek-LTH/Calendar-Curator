@@ -47,7 +47,19 @@ export function CalendarView({
   };
 
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    let sundayFirst = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Adjust to make Monday the first day of the week
+    return (sundayFirst + 6) % 7;
+  };
+
+  const getLastDayOfMonth = (date: Date) => {
+    let sundayFirst = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      0,
+    ).getDay();
+    // Adjust to make Monday the first day of the week
+    return (sundayFirst + 6) % 7;
   };
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -93,6 +105,7 @@ export function CalendarView({
     const month = currentDate.getMonth();
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
+    const lastDay = getLastDayOfMonth(currentDate);
 
     const days = [];
 
@@ -102,6 +115,10 @@ export function CalendarView({
 
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
+    }
+
+    for (let i = lastDay + 1; i <= 6; i++) {
+      days.push(null);
     }
 
     return days;
@@ -142,7 +159,7 @@ export function CalendarView({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1 mb-4">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
               <div
                 key={day}
                 className="p-2 text-center text-sm font-medium text-muted-foreground border-b"
