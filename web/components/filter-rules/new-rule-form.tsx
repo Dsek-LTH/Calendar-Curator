@@ -150,10 +150,7 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
 
   return (
     <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <PlusIcon className="h-4 w-4" />
-        Add New Rule
-      </div>
+      <div className="font-bold flex items-center gap-2 text-sm">New Rule</div>
 
       <div className="space-y-3">
         {/* Actions Section */}
@@ -179,9 +176,6 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
               className="p-3 border rounded-lg bg-background space-y-3"
             >
               <div className="flex items-center justify-between">
-                <Badge variant="outline" className="text-xs">
-                  Action #{actionIndex + 1}
-                </Badge>
                 {newRule.actions.length > 1 && (
                   <Button
                     variant="ghost"

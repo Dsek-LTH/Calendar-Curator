@@ -59,6 +59,29 @@ impl Matcher {
 
     fn matches_date(&self, date: &Option<DateFormat>) -> bool {
         // TODO Implement date matching logic
-        true
+        match &self.match_type {
+            MatchType::BetweenDates => {
+                if let Some(date) = date {
+                    // Value is in the format "YYYY-MM-DD,YYYY-MM-DD"
+                    let dates: Vec<&str> = self.value.split(',').collect();
+                    if dates.len() == 2 {
+                        if let (Ok(start_date), Ok(end_date)) = (
+                            chrono::NaiveDate::parse_from_str(dates[0], "%Y-%m-%d"),
+                            chrono::NaiveDate::parse_from_str(dates[1], "%Y-%m-%d"),
+                        ) {
+                            if let DateFormat::Date(d) = date {
+                                return d >= &start_date && d <= &end_date;
+                            }
+                            if let DateFormat::DateTime(dt) = date {
+                                let d = dt.naive_utc().date();
+                                return d >= start_date && d <= end_date;
+                            }
+                        }
+                    }
+                }
+                false
+            }
+            _ => false, // Other match types do not apply to dates
+        }
     }
 }

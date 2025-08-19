@@ -123,8 +123,9 @@ export function Home() {
               />
               {/* Blocked Events Panel */}
               <BlockedEventsPanel
-                events={events.filter((e) => e.manually_blocked)}
+                events={events}
                 onUnblock={toggleBlockEvent}
+                onRemoveFromAllowlist={toggleAllowlistEvent}
               />
             </div>
 

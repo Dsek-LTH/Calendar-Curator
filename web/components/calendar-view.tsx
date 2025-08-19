@@ -9,9 +9,16 @@ import {
   ArrowRightIcon,
   ScaleIcon,
   ShieldCheckIcon,
+  SettingsIcon,
 } from "lucide-react";
 import { EventDetailsModal } from "@/components/event-details-modal";
+import { CalendarSettingsModal } from "@/components/calendar-settings-modal";
 import { CalendarEvent } from "@/lib/api";
+import {
+  CalendarSettings,
+  getCalendarSettings,
+  setCalendarSettings,
+} from "@/lib/settings";
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -30,6 +37,9 @@ export function CalendarView({
     null,
   );
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [calendarSettings, setCalendarSettingsState] =
+    useState<CalendarSettings>(getCalendarSettings());
 
   useEffect(() => {
     if (selectedEvent) {
@@ -48,8 +58,12 @@ export function CalendarView({
 
   const getFirstDayOfMonth = (date: Date) => {
     let sundayFirst = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    // Adjust to make Monday the first day of the week
-    return (sundayFirst + 6) % 7;
+    // Adjust based on user preference
+    if (calendarSettings.firstDayOfWeek === "monday") {
+      return (sundayFirst + 6) % 7;
+    } else {
+      return sundayFirst;
+    }
   };
 
   const getLastDayOfMonth = (date: Date) => {
@@ -58,8 +72,12 @@ export function CalendarView({
       date.getMonth() + 1,
       0,
     ).getDay();
-    // Adjust to make Monday the first day of the week
-    return (sundayFirst + 6) % 7;
+    // Adjust based on user preference
+    if (calendarSettings.firstDayOfWeek === "monday") {
+      return (sundayFirst + 6) % 7;
+    } else {
+      return sundayFirst;
+    }
   };
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -93,11 +111,20 @@ export function CalendarView({
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const date = new Date(dateString);
+    if (calendarSettings.timeFormat === "24h") {
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    } else {
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
   };
 
   const generateCalendarGrid = () => {
@@ -130,6 +157,19 @@ export function CalendarView({
     year: "numeric",
   });
 
+  // Generate day headers based on user preference
+  const dayHeaders =
+    calendarSettings.firstDayOfWeek === "monday"
+      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  // Handle settings changes and persist them
+  const handleSettingsChange = (newSettings: Partial<CalendarSettings>) => {
+    const updatedSettings = { ...calendarSettings, ...newSettings };
+    setCalendarSettingsState(updatedSettings);
+    setCalendarSettings(newSettings);
+  };
+
   return (
     <>
       <Card>
@@ -154,12 +194,19 @@ export function CalendarView({
               >
                 <ChevronRightIcon className="h-4 w-4" />
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <SettingsIcon className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1 mb-4">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+            {dayHeaders.map((day) => (
               <div
                 key={day}
                 className="p-2 text-center text-sm font-medium text-muted-foreground border-b"
@@ -250,11 +297,11 @@ export function CalendarView({
                                 </span>
                               </div>
                               <div className="ml-auto" />
-                              {event.manually_blocked && (
-                                <EyeOffIcon className="h-3 w-3 flex-shrink-0" />
-                              )}
                               {event.rule_blocked && (
                                 <ScaleIcon className="h-3 w-3 flex-shrink-0" />
+                              )}
+                              {event.manually_blocked && (
+                                <EyeOffIcon className="h-3 w-3 flex-shrink-0" />
                               )}
                               {event.manually_allowlisted && (
                                 <ShieldCheckIcon className="h-3 w-3 flex-shrink-0 text-green-600" />
@@ -299,6 +346,13 @@ export function CalendarView({
         }}
         onToggleBlock={onToggleBlock}
         onToggleAllowlist={onToggleAllowlist}
+      />
+
+      <CalendarSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={calendarSettings}
+        onSettingsChange={handleSettingsChange}
       />
     </>
   );
