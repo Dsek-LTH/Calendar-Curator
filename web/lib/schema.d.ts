@@ -20,6 +20,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/calendars/{id}/allowlist/add": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["allowlist_add"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/calendars/{id}/allowlist/list": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["allowlist_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/calendars/{id}/allowlist/remove": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["allowlist_remove"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/calendars/{id}/block/add": {
     parameters: {
       query?: never;
@@ -196,6 +244,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/calendars/{id}/update_url": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations["update_calendar_url"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -229,10 +293,17 @@ export interface components {
       timestamp: string;
       uid: string;
     };
-    EventResponse: components["schemas"]["Event"] & {
-      blocked: boolean;
+    EventResponse: {
+      /** @description Which fields were changed by transformations */
+      changed_fields: string[];
       /** @description List of rule IDs that matched this event. */
       filtered_by: string[];
+      /** @description Whether this event is allowlisted (immune from rule blocking) */
+      manually_allowlisted: boolean;
+      manually_blocked: boolean;
+      original: components["schemas"]["Event"];
+      rule_blocked: boolean;
+      transformed?: null | components["schemas"]["Event"];
     };
     /** @enum {string} */
     Field: "Summary" | "Description" | "Location" | "StartDate" | "EndDate";
@@ -307,6 +378,9 @@ export interface components {
       | {
           DateTransform: components["schemas"]["DateTransform"];
         };
+    UpdateCalendarUrl: {
+      url: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -337,6 +411,86 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["CreateCalendarResponse"];
         };
+      };
+    };
+  };
+  allowlist_add: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "text/plain": string;
+      };
+    };
+    responses: {
+      /** @description Event added to allowlist */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  allowlist_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of all allowlisted events */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string[];
+        };
+      };
+    };
+  };
+  allowlist_remove: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "text/plain": string;
+      };
+    };
+    responses: {
+      /** @description Event removed from allowlist */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Event not found in allowlist */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -433,7 +587,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Retrieved events for the calendar */
+      /** @description Retrieved events with transformations for the calendar */
       200: {
         headers: {
           [name: string]: unknown;
@@ -651,6 +805,45 @@ export interface operations {
         content?: never;
       };
       /** @description Rule not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_calendar_url: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCalendarUrl"];
+      };
+    };
+    responses: {
+      /** @description Calendar URL updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid URL or failed to fetch calendar */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Calendar not found */
       404: {
         headers: {
           [name: string]: unknown;

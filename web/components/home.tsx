@@ -37,18 +37,51 @@ export function Home() {
       console.error("No calendar ID set");
       return;
     }
-    const path = event.blocked
+    const path = event.manually_blocked
       ? "/calendars/{id}/block/remove"
       : "/calendars/{id}/block/add";
 
     await fetchClient.POST(path, {
       params: { path: { id: calendarId } },
-      body: event.uid,
+      body: event.original.uid,
     });
 
     setEvents((prev) =>
       prev.map((ev) =>
-        ev.uid === event.uid ? { ...ev, blocked: !ev.blocked } : ev,
+        ev.original.uid === event.original.uid
+          ? {
+              ...ev,
+              manually_blocked: !ev.manually_blocked,
+              manually_allowlisted: false,
+            }
+          : ev,
+      ),
+    );
+  };
+
+  const toggleAllowlistEvent = async (event: CalendarEvent) => {
+    if (!calendarId) {
+      console.error("No calendar ID set");
+      return;
+    }
+    const path = event.manually_allowlisted
+      ? "/calendars/{id}/allowlist/remove"
+      : "/calendars/{id}/allowlist/add";
+
+    await fetchClient.POST(path, {
+      params: { path: { id: calendarId } },
+      body: event.original.uid,
+    });
+
+    setEvents((prev) =>
+      prev.map((ev) =>
+        ev.original.uid === event.original.uid
+          ? {
+              ...ev,
+              manually_allowlisted: !ev.manually_allowlisted,
+              manually_blocked: false,
+            }
+          : ev,
       ),
     );
   };
@@ -76,6 +109,7 @@ export function Home() {
           setError={setError}
           loading={loading}
           error={error}
+          calendarId={calendarId}
         />
 
         {events.length > 0 && (
@@ -89,7 +123,7 @@ export function Home() {
               />
               {/* Blocked Events Panel */}
               <BlockedEventsPanel
-                events={events.filter((e) => e.blocked)}
+                events={events.filter((e) => e.manually_blocked)}
                 onUnblock={toggleBlockEvent}
               />
             </div>
@@ -99,6 +133,7 @@ export function Home() {
               <CalendarView
                 events={events}
                 onToggleBlock={toggleBlockEvent}
+                onToggleAllowlist={toggleAllowlistEvent}
                 hoveredRuleId={hoveredRuleId}
               />
             </div>

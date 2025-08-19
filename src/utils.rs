@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::openapi::{RefOr, Schema, Type};
 use utoipa::{PartialSchema, ToSchema};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DateFormat {
     DateTime(DateTime<Utc>),
     Date(NaiveDate),

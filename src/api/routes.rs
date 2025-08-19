@@ -18,6 +18,7 @@ pub(crate) fn router() -> axum::Router<DbState> {
         .routes(routes!(create_calendar))
         .routes(routes!(get_events))
         .routes(routes!(get_calendar_url))
+        .routes(routes!(update_calendar_url))
         .routes(routes!(create_rule))
         .routes(routes!(list_rules))
         .routes(routes!(update_rule))
@@ -27,6 +28,9 @@ pub(crate) fn router() -> axum::Router<DbState> {
         .routes(routes!(block_add))
         .routes(routes!(block_remove))
         .routes(routes!(block_list))
+        .routes(routes!(allowlist_add))
+        .routes(routes!(allowlist_remove))
+        .routes(routes!(allowlist_list))
         .split_for_parts();
     app_router
         .route("/calendars/{id}/feed", axum::routing::get(get_feed))
@@ -44,6 +48,11 @@ pub struct CreateCalendar {
 #[derive(Serialize, ToSchema)]
 pub struct CreateCalendarResponse {
     id: String,
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct UpdateCalendarUrl {
+    url: String,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -82,7 +91,7 @@ pub async fn create_calendar(
         ("id" = String, Path, description = "The ID of the calendar")
     ),
     responses(
-        (status = 200, description = "Retrieved events for the calendar", body = Vec<EventResponse>),
+        (status = 200, description = "Retrieved events with transformations for the calendar", body = Vec<EventResponse>),
     )
 )]
 pub async fn get_events(
@@ -95,25 +104,64 @@ pub async fn get_events(
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     let blocked_events = db_lock.get_manual_blocks(&id).await.unwrap_or_default();
+    let allowlisted_events = db_lock.get_manual_allowlist(&id).await.unwrap_or_default();
     drop(db_lock);
 
     let events: Vec<EventResponse> = cal
-        .get_events()
+        .ical
+        .events
         .into_iter()
-        .map(|event| {
-            let blocked = blocked_events.contains(&event.uid);
-            let filtered_by = cal
-                .rules
-                .iter()
-                .filter_map(|rule| {
-                    let (_event, matched) = rule.apply(event.clone());
-                    if matched { Some(rule.id.clone()) } else { None }
-                })
-                .collect::<Vec<String>>();
+        .map(|original_event| {
+            let manually_blocked = blocked_events.contains(&original_event.uid);
+            let manually_allowlisted = allowlisted_events.contains(&original_event.uid);
+            let mut current_event = original_event.clone();
+            let mut filtered_by = Vec::new();
+            let mut changed_fields = Vec::new();
+            let mut rule_blocked = false;
+
+            for rule in &cal.rules {
+                let (transformed_event, matched) = rule.apply(current_event.clone());
+                if matched {
+                    filtered_by.push(rule.id.clone());
+
+                    if let Some(transformed) = transformed_event {
+                        // Check what fields changed
+                        if original_event.summary != transformed.summary {
+                            changed_fields.push("summary".to_string());
+                        }
+                        if original_event.description != transformed.description {
+                            changed_fields.push("description".to_string());
+                        }
+                        if original_event.location != transformed.location {
+                            changed_fields.push("location".to_string());
+                        }
+                        if original_event.start != transformed.start {
+                            changed_fields.push("start".to_string());
+                        }
+                        if original_event.end != transformed.end {
+                            changed_fields.push("end".to_string());
+                        }
+
+                        current_event = transformed;
+                    } else {
+                        rule_blocked = true;
+                        break;
+                    }
+                }
+            }
+
+            // Remove duplicates from changed_fields
+            changed_fields.sort();
+            changed_fields.dedup();
+
             EventResponse {
-                event: event.clone(),
-                blocked,
+                original: original_event,
+                transformed: Some(current_event),
+                manually_blocked,
+                rule_blocked,
                 filtered_by,
+                changed_fields,
+                manually_allowlisted,
             }
         })
         .collect();
@@ -142,6 +190,37 @@ pub async fn get_calendar_url(
         .await
         .map(|e| Json(e))
         .ok_or(StatusCode::NOT_FOUND)
+}
+
+#[utoipa::path(
+    put,
+    path = "/calendars/{id}/update_url",
+    request_body = UpdateCalendarUrl,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "Calendar URL updated successfully"),
+        (status = 400, description = "Invalid URL or failed to fetch calendar"),
+        (status = 404, description = "Calendar not found")
+    )
+)]
+pub async fn update_calendar_url(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<UpdateCalendarUrl>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    match db_lock.update_calendar_url(&id, body.url.clone()).await {
+        Ok(()) => Ok(StatusCode::OK),
+        Err(err_msg) => {
+            if err_msg.contains("Calendar not found") {
+                Err(StatusCode::NOT_FOUND)
+            } else {
+                Err(StatusCode::BAD_REQUEST)
+            }
+        }
+    }
 }
 
 pub async fn get_feed(
@@ -373,6 +452,75 @@ pub async fn block_remove(
 pub async fn block_list(State(db): State<DbState>, Path(id): Path<String>) -> impl IntoResponse {
     let db_lock = db.lock().await;
     let Some(set) = db_lock.get_manual_blocks(&id).await else {
+        return Err(StatusCode::NOT_FOUND);
+    };
+
+    Ok(Json(set))
+}
+
+#[utoipa::path(
+    post,
+    path = "/calendars/{id}/allowlist/add",
+    request_body = String,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 204, description = "Event added to allowlist")
+    )
+)]
+pub async fn allowlist_add(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<String>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    db_lock.add_manual_allowlist(id.clone(), body.0).await;
+    StatusCode::NO_CONTENT
+}
+
+#[utoipa::path(
+    post,
+    path = "/calendars/{id}/allowlist/remove",
+    request_body = String,
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 204, description = "Event removed from allowlist"),
+        (status = 404, description = "Event not found in allowlist")
+    )
+)]
+pub async fn allowlist_remove(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<String>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    let success = db_lock.remove_manual_allowlist(&id, &body.0).await;
+    if !success {
+        Err(StatusCode::NOT_FOUND)
+    } else {
+        Ok(StatusCode::NO_CONTENT)
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/calendars/{id}/allowlist/list",
+    params(
+        ("id" = String, Path, description = "The ID of the calendar")
+    ),
+    responses(
+        (status = 200, description = "List of all allowlisted events", body = HashSet<String>)
+    )
+)]
+pub async fn allowlist_list(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let db_lock = db.lock().await;
+    let Some(set) = db_lock.get_manual_allowlist(&id).await else {
         return Err(StatusCode::NOT_FOUND);
     };
 

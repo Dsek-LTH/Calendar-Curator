@@ -16,6 +16,8 @@ pub struct Calendar {
     pub url: String,
     /// List of manually blocked event IDs.
     pub manually_blocked: HashSet<String>,
+    /// List of manually allowlisted event IDs (immune from rule blocking).
+    pub manually_allowlisted: HashSet<String>,
 }
 
 impl Calendar {
@@ -26,6 +28,7 @@ impl Calendar {
             id: Uuid::new_v4().to_string(),
             url,
             manually_blocked: HashSet::new(),
+            manually_allowlisted: HashSet::new(),
         }
     }
 
@@ -42,19 +45,25 @@ impl Calendar {
                 !self.manually_blocked.contains(&event.uid)
             })
             .filter_map(|event| {
+                let manually_allowlisted = self.manually_allowlisted.contains(&event.uid);
+                let mut prev_event = event.clone();
                 for rule in &self.rules {
                     let (event, matched) = rule.apply(event.clone());
                     if matched {
+                        if manually_allowlisted {
+                            return Some(event.unwrap_or(prev_event));
+                        }
                         return event;
                     }
+                    prev_event = event.unwrap_or(prev_event);
                 }
                 Some(event.clone())
             })
             .collect()
     }
 
-    pub fn get_events(&self) -> &Vec<Event> {
-        &self.ical.events
+    pub fn get_events(self) -> Vec<Event> {
+        self.ical.events
     }
 
     pub fn get_filtered_icalendar(&self) -> ICalendar {

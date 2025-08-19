@@ -252,9 +252,9 @@ export const isActionStateValid = (actionState: ActionState): boolean => {
         return true;
       case "TimeDiff":
         return (
-          typeof actionState.transformParams?.seconds === "number" &&
-          !Number.isNaN(actionState.transformParams?.seconds) &&
-          actionState.transformParams?.seconds !== 0
+          typeof actionState.transformParams?.value === "number" &&
+          !Number.isNaN(actionState.transformParams?.value) &&
+          actionState.transformParams?.value !== 0
         );
       default:
         return false;

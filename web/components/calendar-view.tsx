@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +6,9 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   EyeOffIcon,
+  ArrowRightIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
 } from "lucide-react";
 import { EventDetailsModal } from "@/components/event-details-modal";
 import { CalendarEvent } from "@/lib/api";
@@ -15,12 +16,14 @@ import { CalendarEvent } from "@/lib/api";
 interface CalendarViewProps {
   events: CalendarEvent[];
   onToggleBlock: (eventId: CalendarEvent) => void;
+  onToggleAllowlist: (eventId: CalendarEvent) => void;
   hoveredRuleId?: string | null;
 }
 
 export function CalendarView({
   events,
   onToggleBlock,
+  onToggleAllowlist,
   hoveredRuleId,
 }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
@@ -30,7 +33,9 @@ export function CalendarView({
 
   useEffect(() => {
     if (selectedEvent) {
-      const updated = events.find((e) => e.uid === selectedEvent.uid);
+      const updated = events.find(
+        (e) => e.original.uid === selectedEvent.original.uid,
+      );
       if (updated) {
         setSelectedEvent(updated);
       }
@@ -60,13 +65,19 @@ export function CalendarView({
   const getEventsForDate = (date: Date) => {
     return events
       .filter((event) => {
-        if (!event.start) return false; // Skip events without a start date
-        const eventDate = new Date(event.start);
+        const eventToCheck = event.transformed || event.original;
+        if (!eventToCheck.start) return false;
+        const eventDate = new Date(eventToCheck.start);
         return eventDate.toDateString() === date.toDateString();
       })
-      .sort(
-        (a, b) => new Date(a.start!!).getTime() - new Date(b.start!!).getTime(),
-      );
+      .sort((a, b) => {
+        const aEvent = a.transformed || a.original;
+        const bEvent = b.transformed || b.original;
+        return (
+          new Date(aEvent.start!!).getTime() -
+          new Date(bEvent.start!!).getTime()
+        );
+      });
   };
 
   const formatTime = (dateString: string) => {
@@ -157,24 +168,47 @@ export function CalendarView({
 
                     <div className="space-y-1">
                       {getEventsForDate(date).map((event) => {
-                        const isBlocked = event.blocked;
                         const isMatchedByHoveredRule =
                           hoveredRuleId &&
                           event.filtered_by?.includes(hoveredRuleId);
+                        const hasTransformedTitle =
+                          event.changed_fields.includes("summary");
+                        const hasTransformedTime =
+                          event.changed_fields.includes("start");
+
+                        // Use transformed data if available and not blocked
+                        const displayEvent = event.transformed
+                          ? event.transformed
+                          : event.original;
 
                         return (
                           <div
-                            key={event.uid}
+                            key={event.original.uid}
                             className={`text-xs p-1 rounded cursor-pointer transition-all hover:shadow-sm ${
-                              isBlocked
-                                ? "bg-destructive/20 text-destructive border border-destructive/30"
+                              isMatchedByHoveredRule &&
+                              ((event.rule_blocked &&
+                                !event.manually_allowlisted) ||
+                                event.manually_blocked)
+                                ? "bg-destructive/40 text-destructive border border-destructive/50"
                                 : isMatchedByHoveredRule
-                                  ? "bg-primary/30 text-primary border border-primary/40"
-                                  : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+                                  ? "bg-primary/30 text-primary border border-primary/40 hover:bg-primary/50"
+                                  : (event.rule_blocked &&
+                                        !event.manually_allowlisted) ||
+                                      event.manually_blocked
+                                    ? "bg-destructive/20 text-destructive border border-destructive/30"
+                                    : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
                             }`}
                             onClick={(e) => {
                               if (e.shiftKey) {
-                                onToggleBlock(event);
+                                if (event.manually_blocked) {
+                                  onToggleBlock(event);
+                                } else if (event.manually_allowlisted) {
+                                  onToggleAllowlist(event);
+                                } else if (event.rule_blocked) {
+                                  onToggleAllowlist(event);
+                                } else {
+                                  onToggleBlock(event);
+                                }
                                 e.preventDefault();
                                 window.getSelection()?.removeAllRanges();
                               } else {
@@ -182,17 +216,47 @@ export function CalendarView({
                               }
                               e.stopPropagation();
                             }}
-                            title={`${event.summary} - ${formatTime(event.start!!)}`}
+                            title={`${displayEvent.summary} - ${formatTime(displayEvent.start!!)}`}
                           >
                             <div className="flex items-center justify-between gap-1">
-                              <span className="truncate font-medium">
-                                {formatTime(event.start!!)}
-                              </span>
-                              {isBlocked && (
+                              <div className="flex items-center gap-1 truncate">
+                                {hasTransformedTime && (
+                                  <span className="text-muted-foreground line-through text-[10px]">
+                                    {formatTime(event.original.start!!)}
+                                  </span>
+                                )}
+                                {hasTransformedTime && (
+                                  <ArrowRightIcon className="h-2 w-2 text-muted-foreground" />
+                                )}
+                                <span className="font-medium">
+                                  {formatTime(displayEvent.start!!)}
+                                </span>
+                              </div>
+                              <div className="ml-auto" />
+                              {event.manually_blocked && (
                                 <EyeOffIcon className="h-3 w-3 flex-shrink-0" />
                               )}
+                              {event.rule_blocked && (
+                                <ScaleIcon className="h-3 w-3 flex-shrink-0" />
+                              )}
+                              {event.manually_allowlisted && (
+                                <ShieldCheckIcon className="h-3 w-3 flex-shrink-0 text-green-600" />
+                              )}
                             </div>
-                            <div className="truncate">{event.summary}</div>
+                            <div className="truncate">
+                              {hasTransformedTitle && (
+                                <>
+                                  <span className="text-muted-foreground line-through text-[10px] block">
+                                    {event.original.summary}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <ArrowRightIcon className="h-2 w-2 text-muted-foreground" />
+                                    <span>{displayEvent.summary}</span>
+                                  </div>
+                                </>
+                              )}
+                              {!hasTransformedTitle && displayEvent.summary}
+                            </div>
                           </div>
                         );
                       })}
@@ -205,7 +269,7 @@ export function CalendarView({
 
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Total events: {events.length} | Blocked:{" "}
-            {events.filter((e) => e.blocked).length}
+            {events.filter((e) => e.manually_blocked || e.rule_blocked).length}
           </div>
         </CardContent>
       </Card>
@@ -213,8 +277,11 @@ export function CalendarView({
       <EventDetailsModal
         event={selectedEvent}
         isOpen={!!selectedEvent}
-        onClose={() => setSelectedEvent(null)}
+        onClose={() => {
+          setSelectedEvent(null);
+        }}
         onToggleBlock={onToggleBlock}
+        onToggleAllowlist={onToggleAllowlist}
       />
     </>
   );

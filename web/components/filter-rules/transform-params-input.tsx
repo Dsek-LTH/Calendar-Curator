@@ -6,31 +6,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NewRuleState } from "./types";
+import { ActionState } from "./types";
 
 interface TransformParamsInputProps {
-  newRule: NewRuleState;
-  onUpdate: (updates: Partial<NewRuleState>) => void;
+  action: ActionState;
+  onUpdate: (updates: Partial<ActionState>) => void;
 }
 
 export function TransformParamsInput({
-  newRule,
+  action,
   onUpdate,
 }: TransformParamsInputProps) {
-  if (newRule.action !== "FieldTransform" || !newRule.transformType) {
+  if (action.type !== "FieldTransform" || !action.transformType) {
     return null;
   }
 
   const updateTransformParams = (updates: any) => {
     onUpdate({
       transformParams: {
-        ...newRule.transformParams,
+        ...action.transformParams,
         ...updates,
       },
     });
   };
 
-  switch (newRule.transformType) {
+  switch (action.transformType) {
     case "TimeDiff":
       return (
         <div className="space-y-3">
@@ -38,14 +38,14 @@ export function TransformParamsInput({
             <Input
               type="number"
               placeholder="Amount"
-              value={Math.abs(newRule.transformParams?.value || 0) || ""}
+              value={Math.abs(action.transformParams?.value || 0) || ""}
               onChange={(e) => {
                 const value = parseInt(e.target.value) || 0;
                 updateTransformParams({ value });
               }}
             />
             <Select
-              value={newRule.transformParams?.unit || "minutes"}
+              value={action.transformParams?.unit || "minutes"}
               onValueChange={(value) => {
                 updateTransformParams({
                   unit: value as "minutes" | "hours" | "days",
@@ -62,7 +62,7 @@ export function TransformParamsInput({
               </SelectContent>
             </Select>
             <Select
-              value={newRule.transformParams?.isNegative ? "subtract" : "add"}
+              value={action.transformParams?.isNegative ? "subtract" : "add"}
               onValueChange={(value) => {
                 updateTransformParams({ isNegative: value === "subtract" });
               }}
@@ -77,10 +77,10 @@ export function TransformParamsInput({
             </Select>
           </div>
           <div className="text-sm text-muted-foreground">
-            {newRule.transformParams?.isNegative ? "Subtract" : "Add"}{" "}
-            {newRule.transformParams?.value || 0}{" "}
-            {newRule.transformParams?.unit || "minutes"}{" "}
-            {newRule.transformParams?.isNegative ? "from" : "to"} the selected
+            {action.transformParams?.isNegative ? "Subtract" : "Add"}{" "}
+            {action.transformParams?.value || 0}{" "}
+            {action.transformParams?.unit || "minutes"}{" "}
+            {action.transformParams?.isNegative ? "from" : "to"} the selected
             date field.
           </div>
         </div>
@@ -91,12 +91,12 @@ export function TransformParamsInput({
         <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="From (text to replace)"
-            value={newRule.transformParams?.from || ""}
+            value={action.transformParams?.from || ""}
             onChange={(e) => updateTransformParams({ from: e.target.value })}
           />
           <Input
             placeholder="To (replacement text)"
-            value={newRule.transformParams?.to || ""}
+            value={action.transformParams?.to || ""}
             onChange={(e) => updateTransformParams({ to: e.target.value })}
           />
         </div>
@@ -106,7 +106,7 @@ export function TransformParamsInput({
       return (
         <Input
           placeholder="Suffix to add"
-          value={newRule.transformParams?.suffix || ""}
+          value={action.transformParams?.suffix || ""}
           onChange={(e) => updateTransformParams({ suffix: e.target.value })}
         />
       );
@@ -115,7 +115,7 @@ export function TransformParamsInput({
       return (
         <Input
           placeholder="Prefix to add"
-          value={newRule.transformParams?.prefix || ""}
+          value={action.transformParams?.prefix || ""}
           onChange={(e) => updateTransformParams({ prefix: e.target.value })}
         />
       );
@@ -125,12 +125,12 @@ export function TransformParamsInput({
         <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="Regex pattern"
-            value={newRule.transformParams?.pattern || ""}
+            value={action.transformParams?.pattern || ""}
             onChange={(e) => updateTransformParams({ pattern: e.target.value })}
           />
           <Input
             placeholder="Replacement text"
-            value={newRule.transformParams?.replacement || ""}
+            value={action.transformParams?.replacement || ""}
             onChange={(e) =>
               updateTransformParams({ replacement: e.target.value })
             }
@@ -142,7 +142,7 @@ export function TransformParamsInput({
       return (
         <Input
           placeholder="Replace entire field with"
-          value={newRule.transformParams?.with || ""}
+          value={action.transformParams?.with || ""}
           onChange={(e) => updateTransformParams({ with: e.target.value })}
         />
       );
@@ -153,7 +153,7 @@ export function TransformParamsInput({
           <Input
             type="number"
             placeholder="Start position"
-            value={newRule.transformParams?.start || ""}
+            value={action.transformParams?.start || ""}
             onChange={(e) =>
               updateTransformParams({ start: parseInt(e.target.value) || 0 })
             }
@@ -161,7 +161,7 @@ export function TransformParamsInput({
           <Input
             type="number"
             placeholder="End position"
-            value={newRule.transformParams?.end || ""}
+            value={action.transformParams?.end || ""}
             onChange={(e) =>
               updateTransformParams({ end: parseInt(e.target.value) || 0 })
             }

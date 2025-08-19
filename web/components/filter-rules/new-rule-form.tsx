@@ -301,13 +301,7 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
 
               {/* Transform Parameters */}
               <TransformParamsInput
-                newRule={{
-                  ...newRule,
-                  action: action.type,
-                  transformField: action.transformField,
-                  transformType: action.transformType,
-                  transformParams: action.transformParams,
-                }}
+                action={action}
                 onUpdate={(updates) => updateAction(actionIndex, updates)}
               />
             </div>

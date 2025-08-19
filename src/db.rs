@@ -189,9 +189,10 @@ impl Db {
         false
     }
 
-    pub async fn add_manual_block(&mut self, calendar_id: String, block: String) {
+    pub async fn add_manual_block(&mut self, calendar_id: String, event_uid: String) {
         if let Some(calendar) = self.calendars.get_mut(&calendar_id) {
-            calendar.manually_blocked.insert(block);
+            calendar.manually_allowlisted.remove(&event_uid);
+            calendar.manually_blocked.insert(event_uid);
             self.save_data_bg().await;
         }
     }
@@ -213,8 +214,58 @@ impl Db {
         false
     }
 
+    pub async fn add_manual_allowlist(&mut self, calendar_id: String, event_uid: String) {
+        if let Some(calendar) = self.calendars.get_mut(&calendar_id) {
+            calendar.manually_blocked.remove(&event_uid);
+            calendar.manually_allowlisted.insert(event_uid);
+            self.save_data_bg().await;
+        }
+    }
+
+    pub async fn get_manual_allowlist(&self, calendar_id: &str) -> Option<HashSet<String>> {
+        self.calendars
+            .get(calendar_id)
+            .map(|cal| cal.manually_allowlisted.clone())
+    }
+
+    pub async fn remove_manual_allowlist(&mut self, calendar_id: &str, event_uid: &str) -> bool {
+        if let Some(calendar) = self.calendars.get_mut(calendar_id) {
+            let removed = calendar.manually_allowlisted.remove(event_uid);
+            if removed {
+                self.save_data_bg().await;
+            }
+            return removed;
+        }
+        false
+    }
+
     pub async fn get_url_from_id(&self, calendar_id: &str) -> Option<String> {
         self.calendars.get(calendar_id).map(|cal| cal.url.clone())
+    }
+
+    pub async fn update_calendar_url(
+        &mut self,
+        calendar_id: &str,
+        new_url: String,
+    ) -> Result<(), String> {
+        // Check if calendar exists
+        let Some(mut calendar) = self.calendars.get(calendar_id).cloned() else {
+            return Err("Calendar not found".to_string());
+        };
+
+        // Update the calendar with new URL and fresh data
+        calendar.url = new_url;
+        calendar.ical = ICalendar::default(); // We don't store events in DB, they're cached separately
+
+        // Update in database
+        self.calendars.insert(calendar_id.to_string(), calendar);
+
+        // Clear the cache for this calendar so fresh events will be fetched next time
+        let mut event_cache = EVENT_CACHE.lock().await;
+        event_cache.remove(calendar_id);
+
+        self.save_data_bg().await; // Auto-save
+        Ok(())
     }
 }
 

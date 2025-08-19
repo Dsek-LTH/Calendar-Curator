@@ -30,18 +30,18 @@ export function BlockedEventsPanel({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <EyeOffIcon className="h-5 w-5" />
-          Blocked Events ({events.length})
+          Manually Blocked Events ({events.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
         {events.map((event) => (
           <div
-            key={event.uid}
+            key={event.original.uid}
             className="p-3 border rounded-lg bg-muted/50 space-y-2"
           >
             <div className="flex items-start justify-between gap-2">
               <h4 className="font-medium text-sm leading-tight">
-                {event.summary}
+                {event.original.summary}
               </h4>
               <Button
                 variant="outline"
@@ -53,15 +53,15 @@ export function BlockedEventsPanel({
               </Button>
             </div>
 
-            {event.start && (
+            {event.original.start && (
               <div className="text-xs text-muted-foreground">
-                {formatDate(event.start)}
+                {formatDate(event.original.start)}
               </div>
             )}
 
-            {event.location && (
+            {event.original.location && (
               <div className="text-xs text-muted-foreground">
-                📍 {event.location}
+                📍 {event.original.location}
               </div>
             )}
 
