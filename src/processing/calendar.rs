@@ -3,11 +3,11 @@ use crate::processing::rule::Rule;
 use std::collections::HashSet;
 
 use crate::processing::event::Event;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Calendar {
     pub ical: ICalendar,
     /// Hashmap of rules applied to this calendar. The key is the rule ID.

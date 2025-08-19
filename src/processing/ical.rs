@@ -1,11 +1,11 @@
 use crate::error::SyntaxError;
 use crate::processing::event::Event;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use utoipa::ToSchema;
 
 /// This is a representation of an iCalendar object from an iCal file. There is also [Calendar] which is the calendar object used internally when processing
-#[derive(Debug, Clone, ToSchema, Serialize)]
+#[derive(Debug, Clone, ToSchema, Serialize, Deserialize)]
 pub struct ICalendar {
     pub(crate) name: String,
     pub(crate) description: String,

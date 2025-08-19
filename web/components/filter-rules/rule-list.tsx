@@ -14,12 +14,14 @@ interface RuleListProps {
   rules: Rule[];
   onDeleteRule: (ruleId: string) => Promise<void>;
   onReorderRules: (fromIndex: number, toIndex: number) => Promise<void>;
+  onRuleHover?: (ruleId: string | null) => void;
 }
 
 export function RuleList({
   rules,
   onDeleteRule,
   onReorderRules,
+  onRuleHover,
 }: RuleListProps) {
   if (rules.length === 0) {
     return (
@@ -35,6 +37,8 @@ export function RuleList({
         <div
           key={rule.id}
           className="flex items-start gap-3 p-3 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
+          onMouseEnter={() => onRuleHover?.(rule.id)}
+          onMouseLeave={() => onRuleHover?.(null)}
         >
           {/* Actions */}
           <div className="flex flex-col items-center gap-1">
@@ -68,10 +72,14 @@ export function RuleList({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <Badge
-                variant={getActionColor(rule.action) as any}
+                variant={getActionColor(rule.actions) as any}
                 className="text-xs"
               >
-                {typeof rule.action === "string" ? rule.action : "Transform"}
+                {rule.actions.length === 1
+                  ? typeof rule.actions[0] === "string"
+                    ? rule.actions[0]
+                    : "Transform"
+                  : `${rule.actions.length} Actions`}
               </Badge>
               <span className="text-xs text-muted-foreground">
                 Rule #{index + 1}

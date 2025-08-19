@@ -1,9 +1,9 @@
 use crate::error::SyntaxError;
 use crate::utils::{DateFormat, parse_datetime};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, ToSchema, Serialize, Clone)]
+#[derive(Debug, ToSchema, Serialize, Deserialize, Clone)]
 pub struct Event {
     pub(crate) start: Option<DateFormat>,
     pub(crate) end: Option<DateFormat>,

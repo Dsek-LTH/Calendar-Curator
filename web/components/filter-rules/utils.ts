@@ -1,14 +1,13 @@
 import {
   Field,
   Matcher,
-  Rule,
   Action,
   Transform,
   DateTransform,
   StringTransform,
   FieldTransform,
 } from "@/lib/api";
-import { NewRuleState } from "./types";
+import { NewRuleState, ActionState } from "./types";
 
 // Field and match type labels
 export const getFieldLabel = (field: Field): string => {
@@ -34,19 +33,17 @@ export const getMatchTypeLabel = (matchType: Matcher["match_type"]): string => {
   return labels[matchType];
 };
 
-export const getActionColor = (action: Rule["action"]): string => {
-  if (typeof action === "string") {
-    switch (action) {
-      case "Block":
-        return "destructive";
-      case "Allow":
-        return "default";
-      default:
-        return "outline";
-    }
-  } else {
-    return "secondary";
-  }
+export const getActionColor = (actions: Action[]): string => {
+  if (actions.length === 0) return "outline";
+
+  // For multiple actions, check if any are blocking
+  const hasBlock = actions.some((action) => action === "Block");
+  if (hasBlock) return "destructive";
+
+  const hasAllow = actions.some((action) => action === "Allow");
+  if (hasAllow) return "default";
+
+  return "secondary"; // All transforms
 };
 
 // Transform description generator
@@ -107,32 +104,34 @@ export const getTransformDescription = (action: Action): string | null => {
   return null;
 };
 
-// Action builder from new rule state
-export const buildActionFromNewRule = (newRule: NewRuleState): Action => {
-  if (newRule.action === "Block" || newRule.action === "Allow") {
-    return newRule.action;
+// Action builder from action state
+export const buildActionFromActionState = (
+  actionState: ActionState,
+): Action => {
+  if (actionState.type === "Block" || actionState.type === "Allow") {
+    return actionState.type;
   }
 
   // Build FieldTransform action
-  if (!newRule.transformField || !newRule.transformType) {
+  if (!actionState.transformField || !actionState.transformType) {
     return "Block"; // fallback
   }
 
   let transform: Transform;
 
   // Handle date transforms
-  if (newRule.transformType === "TimeDiff") {
+  if (actionState.transformType === "TimeDiff") {
     let multiplier = 60;
-    if (newRule.transformParams?.unit === "hours") {
+    if (actionState.transformParams?.unit === "hours") {
       multiplier = 3600;
-    } else if (newRule.transformParams?.unit === "days") {
+    } else if (actionState.transformParams?.unit === "days") {
       multiplier = 86400;
     }
     const dateTransform: DateTransform = {
       TimeDiff: {
         seconds:
-          (newRule.transformParams?.isNegative ? -1 : 1) *
-          (newRule.transformParams?.value || 0) *
+          (actionState.transformParams?.isNegative ? -1 : 1) *
+          (actionState.transformParams?.value || 0) *
           multiplier,
       },
     };
@@ -143,49 +142,49 @@ export const buildActionFromNewRule = (newRule: NewRuleState): Action => {
     // Handle string transforms
     let stringTransform: StringTransform;
 
-    switch (newRule.transformType) {
+    switch (actionState.transformType) {
       case "Substitute":
         stringTransform = {
           Substitute: {
-            from: newRule.transformParams?.from || "",
-            to: newRule.transformParams?.to || "",
+            from: actionState.transformParams?.from || "",
+            to: actionState.transformParams?.to || "",
           },
         };
         break;
       case "Suffix":
         stringTransform = {
           Suffix: {
-            suffix: newRule.transformParams?.suffix || "",
+            suffix: actionState.transformParams?.suffix || "",
           },
         };
         break;
       case "Prefix":
         stringTransform = {
           Prefix: {
-            prefix: newRule.transformParams?.prefix || "",
+            prefix: actionState.transformParams?.prefix || "",
           },
         };
         break;
       case "RegexSubstitute":
         stringTransform = {
           RegexSubstitute: {
-            pattern: newRule.transformParams?.pattern || "",
-            replacement: newRule.transformParams?.replacement || "",
+            pattern: actionState.transformParams?.pattern || "",
+            replacement: actionState.transformParams?.replacement || "",
           },
         };
         break;
       case "Replace":
         stringTransform = {
           Replace: {
-            with: newRule.transformParams?.with || "",
+            with: actionState.transformParams?.with || "",
           },
         };
         break;
       case "Substring":
         stringTransform = {
           Substring: {
-            start: newRule.transformParams?.start || 0,
-            end: newRule.transformParams?.end || 0,
+            start: actionState.transformParams?.start || 0,
+            end: actionState.transformParams?.end || 0,
           },
         };
         break;
@@ -202,7 +201,7 @@ export const buildActionFromNewRule = (newRule: NewRuleState): Action => {
   }
 
   const fieldTransform: FieldTransform = {
-    field: newRule.transformField,
+    field: actionState.transformField,
     transform: transform,
   };
 
@@ -211,10 +210,71 @@ export const buildActionFromNewRule = (newRule: NewRuleState): Action => {
   };
 };
 
+// Actions builder from new rule state
+export const buildActionsFromNewRule = (newRule: NewRuleState): Action[] => {
+  return newRule.actions.map((actionState) =>
+    buildActionFromActionState(actionState),
+  );
+};
+
 // Validation functions
+export const isActionStateValid = (actionState: ActionState): boolean => {
+  if (actionState.type === "Block" || actionState.type === "Allow") {
+    return true;
+  }
+
+  if (actionState.type === "FieldTransform") {
+    if (!actionState.transformField || !actionState.transformType) return false;
+
+    switch (actionState.transformType) {
+      case "Substitute":
+        return !!(
+          actionState.transformParams?.from?.trim() &&
+          actionState.transformParams?.to?.trim()
+        );
+      case "Suffix":
+        return !!actionState.transformParams?.suffix?.trim();
+      case "Prefix":
+        return !!actionState.transformParams?.prefix?.trim();
+      case "RegexSubstitute":
+        return !!(
+          actionState.transformParams?.pattern?.trim() &&
+          actionState.transformParams?.replacement?.trim()
+        );
+      case "Replace":
+        return !!actionState.transformParams?.with?.trim();
+      case "Substring":
+        return (
+          actionState.transformParams?.start != null &&
+          actionState.transformParams?.end != null
+        );
+      case "Remove":
+        return true;
+      case "TimeDiff":
+        return (
+          typeof actionState.transformParams?.seconds === "number" &&
+          !Number.isNaN(actionState.transformParams?.seconds) &&
+          actionState.transformParams?.seconds !== 0
+        );
+      default:
+        return false;
+    }
+  }
+
+  return false;
+};
+
 export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
+  // Check if there are any actions and all actions are valid
+  if (newRule.actions.length === 0) return true;
+
+  const hasInvalidActions = newRule.actions.some(
+    (action) => !isActionStateValid(action),
+  );
+  if (hasInvalidActions) return true;
+
   // For date fields, allow empty values - no validation needed
-  const hasInvalidMatchers = newRule.filter.matchers.some((group) =>
+  const hasInvalidMatchers = newRule.matchers.some((group) =>
     group.some((matcher) => {
       // Date fields can have empty values
       if (matcher.field === "StartDate" || matcher.field === "EndDate") {
@@ -225,45 +285,5 @@ export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
     }),
   );
 
-  if (hasInvalidMatchers) return true;
-
-  if (newRule.action === "FieldTransform") {
-    if (!newRule.transformField || !newRule.transformType) return true;
-
-    switch (newRule.transformType) {
-      case "Substitute":
-        return (
-          !newRule.transformParams?.from?.trim() ||
-          !newRule.transformParams?.to?.trim()
-        );
-      case "Suffix":
-        return !newRule.transformParams?.suffix?.trim();
-      case "Prefix":
-        return !newRule.transformParams?.prefix?.trim();
-      case "RegexSubstitute":
-        return (
-          !newRule.transformParams?.pattern?.trim() ||
-          !newRule.transformParams?.replacement?.trim()
-        );
-      case "Replace":
-        return !newRule.transformParams?.with?.trim();
-      case "Substring":
-        return (
-          newRule.transformParams?.start == null ||
-          newRule.transformParams?.end == null
-        );
-      case "Remove":
-        return false;
-      case "TimeDiff":
-        return (
-          typeof newRule.transformParams?.seconds !== "number" ||
-          Number.isNaN(newRule.transformParams?.seconds) ||
-          newRule.transformParams?.seconds === 0
-        );
-      default:
-        return true;
-    }
-  }
-
-  return false;
+  return hasInvalidMatchers;
 };

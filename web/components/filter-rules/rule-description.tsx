@@ -11,29 +11,51 @@ interface RuleDescriptionProps {
 }
 
 export function RuleDescription({ rule }: RuleDescriptionProps) {
-  const transformDescription = getTransformDescription(rule.action);
+  const actionDescriptions = rule.actions.map((action, _index) => {
+    if (typeof action === "string") {
+      return { type: action, description: action };
+    } else {
+      return {
+        type: "Transform",
+        description: getTransformDescription(action) || "Transform field",
+      };
+    }
+  });
 
   return (
     <div className="text-sm">
-      {transformDescription && (
-        <div className="mb-1">
-          <span className="font-medium text-blue-600">
-            {transformDescription}
-          </span>
-        </div>
-      )}
+      {/* Actions Section */}
+      <div className="mb-2">
+        {actionDescriptions.map((actionDesc, index) => (
+          <div key={index} className="mb-1">
+            <Badge variant="outline" className="mr-2 text-xs">
+              {index + 1}
+            </Badge>
+            <span
+              className={`font-medium ${
+                actionDesc.type === "Block"
+                  ? "text-red-600"
+                  : actionDesc.type === "Allow"
+                    ? "text-green-600"
+                    : "text-blue-600"
+              }`}
+            >
+              {actionDesc.description}
+            </span>
+          </div>
+        ))}
+      </div>
 
-      {rule.filter.matchers.length === 0 ||
-      rule.filter.matchers.every((group) => group.length === 0) ? (
+      {/* Conditions Section */}
+      {rule.matchers.length === 0 ||
+      rule.matchers.every((group) => group.length === 0) ? (
         <span className="text-muted-foreground italic">
           No conditions (applies to all events)
         </span>
       ) : (
         <div>
-          {transformDescription && (
-            <span className="text-muted-foreground">when </span>
-          )}
-          {rule.filter.matchers.map((group, groupIndex) =>
+          <span className="text-muted-foreground">when </span>
+          {rule.matchers.map((group, groupIndex) =>
             group.map((matcher, matcherIndex) => (
               <span key={`${groupIndex}-${matcherIndex}`}>
                 {groupIndex > 0 && matcherIndex === 0 && (

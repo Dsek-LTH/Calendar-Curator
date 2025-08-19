@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Rule, fetchClient } from "@/lib/api";
 
-export const useRulesManager = (calendarId: string | null) => {
+export const useRulesManager = (
+  calendarId: string | null,
+  onRuleChange?: () => void,
+) => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +53,9 @@ export const useRulesManager = (calendarId: string | null) => {
 
       // Reload rules after creation
       await loadRules();
+
+      // Trigger event reload to update filtered_by
+      onRuleChange?.();
     } catch (err) {
       console.error("Failed to create rule:", err);
       setError("Failed to create rule");
@@ -68,6 +74,9 @@ export const useRulesManager = (calendarId: string | null) => {
 
       // Reload rules after deletion
       await loadRules();
+
+      // Trigger event reload to update filtered_by
+      onRuleChange?.();
     } catch (err) {
       console.error("Failed to delete rule:", err);
       setError("Failed to delete rule");
@@ -95,6 +104,9 @@ export const useRulesManager = (calendarId: string | null) => {
 
       // Reload rules after reordering
       await loadRules();
+
+      // Trigger event reload to update filtered_by
+      onRuleChange?.();
     } catch (err) {
       console.error("Failed to reorder rules:", err);
       setError("Failed to reorder rules");

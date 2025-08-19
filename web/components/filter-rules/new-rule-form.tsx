@@ -9,10 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, TrashIcon } from "lucide-react";
 import { Matcher, Field, Rule } from "@/lib/api";
-import { NewRuleState } from "./types";
-import { buildActionFromNewRule, isAddRuleDisabled } from "./utils";
+import { NewRuleState, ActionState } from "./types";
+import { buildActionsFromNewRule, isAddRuleDisabled } from "./utils";
 import { MatcherInput } from "./matcher-input";
 import { TransformParamsInput } from "./transform-params-input";
 
@@ -22,11 +22,44 @@ interface NewRuleFormProps {
 
 export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
   const [newRule, setNewRule] = useState<NewRuleState>({
-    action: "Block",
-    filter: {
-      matchers: [[]],
-    },
+    actions: [{ type: "Block" }],
+    matchers: [[]],
   });
+
+  const addActionToNewRule = () => {
+    const newAction: ActionState = { type: "Block" };
+    setNewRule({
+      ...newRule,
+      actions: [...newRule.actions, newAction],
+    });
+  };
+
+  const removeActionFromNewRule = (actionIndex: number) => {
+    if (newRule.actions.length <= 1) return; // Keep at least one action
+
+    const newActions = newRule.actions.filter((_, i) => i !== actionIndex);
+    setNewRule({ ...newRule, actions: newActions });
+  };
+
+  const updateAction = (actionIndex: number, updates: Partial<ActionState>) => {
+    const newActions = [...newRule.actions];
+    const currentAction = newActions[actionIndex];
+
+    // If field is being updated to a date field, set match_type to BetweenDates
+    if (
+      updates.transformField &&
+      (updates.transformField === "StartDate" ||
+        updates.transformField === "EndDate")
+    ) {
+      updates.transformType = "TimeDiff";
+    }
+
+    newActions[actionIndex] = {
+      ...currentAction,
+      ...updates,
+    };
+    setNewRule({ ...newRule, actions: newActions });
+  };
 
   const addMatcherToNewRule = (groupIndex: number) => {
     const newMatcher: Matcher = {
@@ -37,21 +70,21 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
       negated: false,
     };
 
-    const newMatchers = [...newRule.filter.matchers];
+    const newMatchers = [...newRule.matchers];
     newMatchers[groupIndex] = [...newMatchers[groupIndex], newMatcher];
-    setNewRule({ ...newRule, filter: { matchers: newMatchers } });
+    setNewRule({ ...newRule, matchers: newMatchers });
   };
 
   const addMatcherGroupToNewRule = () => {
-    const newMatchers = [...newRule.filter.matchers, []];
-    setNewRule({ ...newRule, filter: { matchers: newMatchers } });
+    const newMatchers = [...newRule.matchers, []];
+    setNewRule({ ...newRule, matchers: newMatchers });
   };
 
   const removeMatcherFromNewRule = (
     groupIndex: number,
     matcherIndex: number,
   ) => {
-    const newMatchers = [...newRule.filter.matchers];
+    const newMatchers = [...newRule.matchers];
     newMatchers[groupIndex] = newMatchers[groupIndex].filter(
       (_, i) => i !== matcherIndex,
     );
@@ -60,7 +93,7 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
       newMatchers.splice(groupIndex, 1);
     }
 
-    setNewRule({ ...newRule, filter: { matchers: newMatchers } });
+    setNewRule({ ...newRule, matchers: newMatchers });
   };
 
   const updateNewRuleMatcher = (
@@ -68,7 +101,7 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
     matcherIndex: number,
     updates: Partial<Matcher>,
   ) => {
-    const newMatchers = [...newRule.filter.matchers];
+    const newMatchers = [...newRule.matchers];
     const currentMatcher = newMatchers[groupIndex][matcherIndex];
 
     // If field is being updated to a date field, set match_type to BetweenDates
@@ -83,39 +116,35 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
       ...currentMatcher,
       ...updates,
     };
-    setNewRule({ ...newRule, filter: { matchers: newMatchers } });
+    setNewRule({ ...newRule, matchers: newMatchers });
   };
 
   const handleAddRule = async () => {
     if (
-      newRule.filter.matchers.some((group) =>
+      newRule.matchers.some((group) =>
         group.some((matcher) => !matcher.value?.trim()),
       )
     )
       return;
 
     // Remove empty matcher groups
-    newRule.filter.matchers = newRule.filter.matchers.filter(
-      (group) => group.length > 0,
-    );
-    if (newRule.filter.matchers.length === 0) {
-      newRule.filter.matchers = [[]]; // Ensure at least one group exists
+    newRule.matchers = newRule.matchers.filter((group) => group.length > 0);
+    if (newRule.matchers.length === 0) {
+      newRule.matchers = [[]]; // Ensure at least one group exists
     }
 
-    const action = buildActionFromNewRule(newRule);
+    const actions = buildActionsFromNewRule(newRule);
     const apiRule: Rule = {
-      action,
-      filter: newRule.filter,
+      actions,
+      matchers: newRule.matchers,
       id: "",
     };
 
     await onCreateRule(apiRule);
 
     setNewRule({
-      action: "Block",
-      filter: {
-        matchers: [[]],
-      },
+      actions: [{ type: "Block" }],
+      matchers: [[]],
     });
   };
 
@@ -127,111 +156,170 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
       </div>
 
       <div className="space-y-3">
-        {/* Action Selection */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Action:</Label>
-            <Select
-              value={newRule.action}
-              onValueChange={(value) =>
-                setNewRule({
-                  ...newRule,
-                  action: value as "Block" | "Allow" | "FieldTransform",
-                })
-              }
+        {/* Actions Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">
+              Actions (executed sequentially):
+            </Label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addActionToNewRule}
+              className="h-8"
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Block">Block Event</SelectItem>
-                <SelectItem value="Allow">Allow Event</SelectItem>
-                <SelectItem value="FieldTransform">Transform Field</SelectItem>
-              </SelectContent>
-            </Select>
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Add Action
+            </Button>
           </div>
 
-          {/* Transform Field Selection */}
-          {newRule.action === "FieldTransform" && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Transform Field:</Label>
-              <Select
-                value={newRule.transformField || ""}
-                onValueChange={(value) =>
-                  setNewRule({
-                    ...newRule,
-                    transformField: value as Field,
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select field" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Summary">Title</SelectItem>
-                  <SelectItem value="Description">Description</SelectItem>
-                  <SelectItem value="Location">Location</SelectItem>
-                  <SelectItem value="StartDate">Start Date</SelectItem>
-                  <SelectItem value="EndDate">End Date</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-
-        {/* Transform Type Selection */}
-        {newRule.action === "FieldTransform" && newRule.transformField && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Transform Type:</Label>
-            <Select
-              value={newRule.transformType || ""}
-              onValueChange={(value) =>
-                setNewRule({
-                  ...newRule,
-                  transformType: value as NewRuleState["transformType"],
-                  transformParams: {},
-                })
-              }
+          {newRule.actions.map((action, actionIndex) => (
+            <div
+              key={actionIndex}
+              className="p-3 border rounded-lg bg-background space-y-3"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select transform" />
-              </SelectTrigger>
-              <SelectContent>
-                {newRule.transformField === "StartDate" ||
-                newRule.transformField === "EndDate" ? (
-                  <SelectItem value="TimeDiff">Time Difference</SelectItem>
-                ) : (
-                  <>
-                    <SelectItem value="Substitute">Substitute Text</SelectItem>
-                    <SelectItem value="Suffix">Add Suffix</SelectItem>
-                    <SelectItem value="Prefix">Add Prefix</SelectItem>
-                    <SelectItem value="RegexSubstitute">
-                      Regex Substitute
-                    </SelectItem>
-                    <SelectItem value="Replace">
-                      Replace Entire Field
-                    </SelectItem>
-                    <SelectItem value="Substring">Extract Substring</SelectItem>
-                    <SelectItem value="Remove">Remove Field</SelectItem>
-                  </>
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-xs">
+                  Action #{actionIndex + 1}
+                </Badge>
+                {newRule.actions.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeActionFromNewRule(actionIndex)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
                 )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+              </div>
 
-        {/* Transform Parameters */}
-        <TransformParamsInput
-          newRule={newRule}
-          onUpdate={(updates) => setNewRule({ ...newRule, ...updates })}
-        />
+              {/* Action Type Selection */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Action Type:</Label>
+                  <Select
+                    value={action.type}
+                    onValueChange={(value) =>
+                      updateAction(actionIndex, {
+                        type: value as "Block" | "Allow" | "FieldTransform",
+                        transformField: undefined,
+                        transformType: undefined,
+                        transformParams: undefined,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Block">Block Event</SelectItem>
+                      <SelectItem value="Allow">Allow Event</SelectItem>
+                      <SelectItem value="FieldTransform">
+                        Transform Field
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Transform Field Selection */}
+                {action.type === "FieldTransform" && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Transform Field:
+                    </Label>
+                    <Select
+                      value={action.transformField || ""}
+                      onValueChange={(value) =>
+                        updateAction(actionIndex, {
+                          transformField: value as Field,
+                          transformType: undefined,
+                          transformParams: undefined,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select field" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Summary">Title</SelectItem>
+                        <SelectItem value="Description">Description</SelectItem>
+                        <SelectItem value="Location">Location</SelectItem>
+                        <SelectItem value="StartDate">Start Date</SelectItem>
+                        <SelectItem value="EndDate">End Date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* Transform Type Selection */}
+              {action.type === "FieldTransform" && action.transformField && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Transform Type:</Label>
+                  <Select
+                    value={action.transformType || ""}
+                    onValueChange={(value) =>
+                      updateAction(actionIndex, {
+                        transformType: value as ActionState["transformType"],
+                        transformParams: {},
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select transform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {action.transformField === "StartDate" ||
+                      action.transformField === "EndDate" ? (
+                        <SelectItem value="TimeDiff">
+                          Time Difference
+                        </SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="Substitute">
+                            Substitute Text
+                          </SelectItem>
+                          <SelectItem value="Suffix">Add Suffix</SelectItem>
+                          <SelectItem value="Prefix">Add Prefix</SelectItem>
+                          <SelectItem value="RegexSubstitute">
+                            Regex Substitute
+                          </SelectItem>
+                          <SelectItem value="Replace">
+                            Replace Entire Field
+                          </SelectItem>
+                          <SelectItem value="Substring">
+                            Extract Substring
+                          </SelectItem>
+                          <SelectItem value="Remove">Remove Field</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Transform Parameters */}
+              <TransformParamsInput
+                newRule={{
+                  ...newRule,
+                  action: action.type,
+                  transformField: action.transformField,
+                  transformType: action.transformType,
+                  transformParams: action.transformParams,
+                }}
+                onUpdate={(updates) => updateAction(actionIndex, updates)}
+              />
+            </div>
+          ))}
+        </div>
 
         {/* Conditions */}
         <div className="flex items-center gap-2">
           <Label className="text-sm font-medium">Conditions (optional):</Label>
         </div>
 
-        {newRule.filter.matchers.map((group, groupIndex) => (
+        {newRule.matchers.map((group, groupIndex) => (
           <div key={groupIndex} className="space-y-2">
             {groupIndex > 0 && (
               <div className="flex justify-center">

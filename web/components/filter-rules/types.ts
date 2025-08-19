@@ -1,11 +1,9 @@
-import { Field, Filter } from "@/lib/api";
+import { Field, Matcher } from "@/lib/api";
 
-// UI state for creating new rules
-export interface NewRuleState {
-  action: "Block" | "Allow" | "FieldTransform";
-  filter: Filter;
+// UI state for a single action in a rule
+export interface ActionState {
+  type: "Block" | "Allow" | "FieldTransform";
   transformField?: Field;
-  // Weird typescript issue if I do `keyof StringTransform | keyof DateTransform`
   transformType?:
     | "Substitute"
     | "Suffix"
@@ -18,6 +16,8 @@ export interface NewRuleState {
   transformParams?: any;
 }
 
-export interface RulesPanelProps {
-  calendarId: string | null;
+// UI state for creating new rules
+export interface NewRuleState {
+  actions: ActionState[];
+  matchers: Matcher[][];
 }

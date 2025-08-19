@@ -1,6 +1,6 @@
 use crate::error::SyntaxError;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::openapi::{RefOr, Schema, Type};
 use utoipa::{PartialSchema, ToSchema};
 
@@ -33,6 +33,16 @@ impl Serialize for DateFormat {
     {
         let date_str = self.to_formatted_string();
         serializer.serialize_str(&date_str)
+    }
+}
+
+impl<'de> Deserialize<'de> for DateFormat {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let date_str = String::deserialize(deserializer)?;
+        parse_datetime(&date_str).map_err(serde::de::Error::custom)
     }
 }
 

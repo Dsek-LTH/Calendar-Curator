@@ -11,6 +11,9 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // Create shared database instance
+    let db_state = db::create_db_instance("calendars.json".to_string()).await;
+
     let socket_address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
     let listener = tokio::net::TcpListener::bind(socket_address).await?;
 
@@ -24,7 +27,11 @@ async fn main() -> std::io::Result<()> {
             axum::http::Method::PUT,
         ])
         .allow_headers(Any); // or list specific headers
-    let app = axum::Router::new().merge(routes::router()).layer(cors);
+
+    let app = axum::Router::new()
+        .merge(routes::router())
+        .with_state(db_state)
+        .layer(cors);
 
     axum::serve(listener, app.into_make_service()).await
 

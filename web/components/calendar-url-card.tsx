@@ -146,7 +146,7 @@ export function CalendarUrlCard({
             <p className="text-sm font-medium">Filtered Proxy URL:</p>
             <div className="flex gap-2">
               <Input
-                value={proxyUrl}
+                value={`${window.location.protocol}//${window.location.host}${proxyUrl}`}
                 readOnly
                 className="flex-1 font-mono text-xs"
               />

@@ -231,18 +231,14 @@ export interface components {
     };
     EventResponse: components["schemas"]["Event"] & {
       blocked: boolean;
-      filtered_by: components["schemas"]["Rule"][];
+      /** @description List of rule IDs that matched this event. */
+      filtered_by: string[];
     };
     /** @enum {string} */
     Field: "Summary" | "Description" | "Location" | "StartDate" | "EndDate";
     FieldTransform: {
       field: components["schemas"]["Field"];
       transform: components["schemas"]["Transform"];
-    };
-    Filter: {
-      /** @description Each inner vector represents a logical AND condition,
-       *     while the outer vector represents a logical OR condition. */
-      matchers: components["schemas"]["Matcher"][][];
     };
     /** @enum {string} */
     MatchType:
@@ -263,9 +259,11 @@ export interface components {
       rule_ids: string[];
     };
     Rule: {
-      action: components["schemas"]["Action"];
-      filter: components["schemas"]["Filter"];
+      actions: components["schemas"]["Action"][];
       id: string;
+      /** @description Each inner vector represents a logical AND condition,
+       *     while the outer vector represents a logical OR condition. */
+      matchers: components["schemas"]["Matcher"][][];
     };
     StringTransform:
       | {

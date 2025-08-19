@@ -2,14 +2,21 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScaleIcon } from "lucide-react";
-import { RulesPanelProps } from "./filter-rules/types";
 import { useRulesManager } from "./filter-rules/use-rules-manager";
 import { NewRuleForm } from "./filter-rules/new-rule-form";
 import { RuleList } from "./filter-rules/rule-list";
 
-export function RulesPanel({ calendarId }: RulesPanelProps) {
+export function RulesPanel({
+  calendarId,
+  onRuleHover,
+  onRuleChange,
+}: {
+  calendarId: string | null;
+  onRuleHover?: (ruleId: string | null) => void;
+  onRuleChange?: () => void;
+}) {
   const { rules, error, createRule, deleteRule, reorderRules } =
-    useRulesManager(calendarId);
+    useRulesManager(calendarId, onRuleChange);
 
   return (
     <Card>
@@ -42,6 +49,7 @@ export function RulesPanel({ calendarId }: RulesPanelProps) {
               rules={rules}
               onDeleteRule={deleteRule}
               onReorderRules={reorderRules}
+              onRuleHover={onRuleHover}
             />
           </>
         )}

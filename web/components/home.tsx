@@ -14,6 +14,23 @@ export function Home() {
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hoveredRuleId, setHoveredRuleId] = useState<string | null>(null);
+
+  const reloadEvents = async () => {
+    if (!calendarId) return;
+
+    try {
+      const response = await fetchClient.GET("/calendars/{id}/get_events", {
+        params: { path: { id: calendarId } },
+      });
+
+      if (response.data) {
+        setEvents(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to reload events:", err);
+    }
+  };
 
   const toggleBlockEvent = async (event: CalendarEvent) => {
     if (!calendarId) {
@@ -65,7 +82,11 @@ export function Home() {
           <div className="grid lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1 space-y-6">
               {/* Filter Rules Panel */}
-              <RulesPanel calendarId={calendarId} />
+              <RulesPanel
+                calendarId={calendarId}
+                onRuleHover={setHoveredRuleId}
+                onRuleChange={reloadEvents}
+              />
               {/* Blocked Events Panel */}
               <BlockedEventsPanel
                 events={events.filter((e) => e.blocked)}
@@ -75,7 +96,11 @@ export function Home() {
 
             {/* Calendar View */}
             <div className="lg:col-span-3">
-              <CalendarView events={events} onToggleBlock={toggleBlockEvent} />
+              <CalendarView
+                events={events}
+                onToggleBlock={toggleBlockEvent}
+                hoveredRuleId={hoveredRuleId}
+              />
             </div>
           </div>
         )}

@@ -1,22 +1,24 @@
 use crate::processing::action::Action;
 use crate::processing::event::Event;
-use crate::processing::filter::Filter;
+use crate::processing::matcher::Matcher;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
 pub struct Rule {
     pub id: String,
-    pub filter: Filter,
-    pub action: Action,
+    /// Each inner vector represents a logical AND condition,
+    /// while the outer vector represents a logical OR condition.
+    pub matchers: Vec<Vec<Matcher>>,
+    pub actions: Vec<Action>,
 }
 
 impl Rule {
-    pub fn new(filter: Filter, action: Action) -> Self {
+    pub fn new(matchers: Vec<Vec<Matcher>>, actions: Vec<Action>) -> Self {
         Self {
             id: String::new(),
-            filter,
-            action,
+            matchers,
+            actions,
         }
     }
 
@@ -26,8 +28,27 @@ impl Rule {
     /// - An `Option<Event>` which is `None` if the event was blocked or transformed, or `Some(event)` if it was allowed.
     /// - A `bool` indicating whether the event was affected by the rule (i.e., whether it was blocked or transformed).
     pub fn apply(&self, event: Event) -> (Option<Event>, bool) {
-        if self.filter.matches(&event) {
-            (self.action.apply(event), true)
+        let mut matches = false;
+        for matchers in &self.matchers {
+            if matchers.iter().all(|matcher| matcher.matches(&event)) {
+                matches = true; // At least one set of matchers matched
+                break;
+            }
+        }
+
+        if matches {
+            let mut event = event;
+            for action in &self.actions {
+                if let Some(transformed_event) = action.apply(event.clone()) {
+                    event = transformed_event;
+                } else {
+                    // If the action returns None, it means the event is blocked
+                    return (None, true);
+                }
+            }
+
+            // If we reach here, the event was transformed or allowed
+            (Some(event), true)
         } else {
             (Some(event), false)
         }

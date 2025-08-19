@@ -15,9 +15,14 @@ import { CalendarEvent } from "@/lib/api";
 interface CalendarViewProps {
   events: CalendarEvent[];
   onToggleBlock: (eventId: CalendarEvent) => void;
+  hoveredRuleId?: string | null;
 }
 
-export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
+export function CalendarView({
+  events,
+  onToggleBlock,
+  hoveredRuleId,
+}: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
@@ -153,6 +158,9 @@ export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
                     <div className="space-y-1">
                       {getEventsForDate(date).map((event) => {
                         const isBlocked = event.blocked;
+                        const isMatchedByHoveredRule =
+                          hoveredRuleId &&
+                          event.filtered_by?.includes(hoveredRuleId);
 
                         return (
                           <div
@@ -160,7 +168,9 @@ export function CalendarView({ events, onToggleBlock }: CalendarViewProps) {
                             className={`text-xs p-1 rounded cursor-pointer transition-all hover:shadow-sm ${
                               isBlocked
                                 ? "bg-destructive/20 text-destructive border border-destructive/30"
-                                : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+                                : isMatchedByHoveredRule
+                                  ? "bg-primary/30 text-primary border border-primary/40"
+                                  : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
                             }`}
                             onClick={(e) => {
                               if (e.shiftKey) {

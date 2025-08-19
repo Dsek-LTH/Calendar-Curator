@@ -62,21 +62,3 @@ impl Matcher {
         true
     }
 }
-
-#[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
-pub struct Filter {
-    /// Each inner vector represents a logical AND condition,
-    /// while the outer vector represents a logical OR condition.
-    matchers: Vec<Vec<Matcher>>,
-}
-
-impl Filter {
-    pub fn matches(&self, event: &Event) -> bool {
-        for matchers in &self.matchers {
-            if matchers.iter().all(|matcher| matcher.matches(event)) {
-                return true; // At least one set of matchers matched
-            }
-        }
-        false // No match found
-    }
-}

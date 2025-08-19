@@ -1,10 +1,10 @@
 use crate::api::types::EventResponse;
-use crate::db::Calendar;
+use crate::db::{Calendar, DbState};
 use crate::processing::rule::Rule;
-use crate::{db, upstream};
+use crate::upstream;
 use axum::Json;
 use axum::body::Body;
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::IntoResponse;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
-pub(crate) fn router() -> axum::Router {
+pub(crate) fn router() -> axum::Router<DbState> {
     let (app_router, openapi) = OpenApiRouter::new()
         .routes(routes!(create_calendar))
         .routes(routes!(get_events))
@@ -60,6 +60,7 @@ pub struct ReorderRulesRequest {
     )
 )]
 pub async fn create_calendar(
+    State(db): State<DbState>,
     calendar_data: Json<CreateCalendar>,
 ) -> Result<Json<CreateCalendarResponse>, StatusCode> {
     let icalendar = upstream::get_icalendar(&calendar_data.url)
@@ -67,10 +68,10 @@ pub async fn create_calendar(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let calendar = Calendar::from_ical(calendar_data.url.clone(), icalendar);
 
-    let response = CreateCalendarResponse {
-        id: calendar.id.clone(),
-    };
-    db::add_calendar(calendar).await;
+    let mut db_lock = db.lock().await;
+    let id = db_lock.add_calendar(calendar).await;
+
+    let response = CreateCalendarResponse { id };
     Ok(Json(response))
 }
 
@@ -84,10 +85,18 @@ pub async fn create_calendar(
         (status = 200, description = "Retrieved events for the calendar", body = Vec<EventResponse>),
     )
 )]
-pub async fn get_events(Path(id): Path<String>) -> Result<Json<Vec<EventResponse>>, StatusCode> {
-    let cal = db::get_calendar(&id).await.ok_or(StatusCode::NOT_FOUND)?;
+pub async fn get_events(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<EventResponse>>, StatusCode> {
+    let db_lock = db.lock().await;
+    let cal = db_lock
+        .get_calendar(&id)
+        .await
+        .ok_or(StatusCode::NOT_FOUND)?;
+    let blocked_events = db_lock.get_manual_blocks(&id).await.unwrap_or_default();
+    drop(db_lock);
 
-    let blocked_events = db::get_manual_blocks(&id).await.unwrap_or_default();
     let events: Vec<EventResponse> = cal
         .get_events()
         .into_iter()
@@ -97,10 +106,10 @@ pub async fn get_events(Path(id): Path<String>) -> Result<Json<Vec<EventResponse
                 .rules
                 .iter()
                 .filter_map(|rule| {
-                    let (event, matched) = rule.apply(event.clone());
-                    if matched { Some(rule.clone()) } else { None }
+                    let (_event, matched) = rule.apply(event.clone());
+                    if matched { Some(rule.id.clone()) } else { None }
                 })
-                .collect::<Vec<Rule>>();
+                .collect::<Vec<String>>();
             EventResponse {
                 event: event.clone(),
                 blocked,
@@ -123,15 +132,28 @@ pub async fn get_events(Path(id): Path<String>) -> Result<Json<Vec<EventResponse
         (status = 404, description = "Calendar not found")
     )
 )]
-pub async fn get_calendar_url(Path(id): Path<String>) -> impl IntoResponse {
-    db::get_url_from_id(&id)
+pub async fn get_calendar_url(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let db_lock = db.lock().await;
+    db_lock
+        .get_url_from_id(&id)
         .await
         .map(|e| Json(e))
         .ok_or(StatusCode::NOT_FOUND)
 }
 
-pub async fn get_feed(Path(id): Path<String>) -> Result<(HeaderMap, Body), StatusCode> {
-    let calendar = db::get_calendar(&id).await.ok_or(StatusCode::NOT_FOUND)?;
+pub async fn get_feed(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+) -> Result<(HeaderMap, Body), StatusCode> {
+    let db_lock = db.lock().await;
+    let calendar = db_lock
+        .get_calendar(&id)
+        .await
+        .ok_or(StatusCode::NOT_FOUND)?;
+    drop(db_lock);
 
     let ical = calendar.get_filtered_icalendar();
 
@@ -163,9 +185,14 @@ pub async fn get_feed(Path(id): Path<String>) -> Result<(HeaderMap, Body), Statu
         (status = 200, description = "Rule created", body = String)
     )
 )]
-pub async fn create_rule(Path(id): Path<String>, body: Json<Rule>) -> impl IntoResponse {
-    let id = db::add_rule(id.clone(), body.clone().0).await;
-    match id {
+pub async fn create_rule(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<Rule>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    let rule_id = db_lock.add_rule(id.clone(), body.clone().0).await;
+    match rule_id {
         Some(id) => Ok(Json(id)),
         None => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
@@ -182,8 +209,9 @@ pub async fn create_rule(Path(id): Path<String>, body: Json<Rule>) -> impl IntoR
         (status = 404, description = "Calendar not found")
     )
 )]
-pub async fn list_rules(Path(id): Path<String>) -> impl IntoResponse {
-    let Some(rules) = db::list_rules(&id).await else {
+pub async fn list_rules(State(db): State<DbState>, Path(id): Path<String>) -> impl IntoResponse {
+    let db_lock = db.lock().await;
+    let Some(rules) = db_lock.list_rules(&id).await else {
         return Err(StatusCode::NOT_FOUND);
     };
     Ok(Json(rules))
@@ -202,10 +230,12 @@ pub async fn list_rules(Path(id): Path<String>) -> impl IntoResponse {
     )
 )]
 pub async fn update_rule(
+    State(db): State<DbState>,
     Path((id, rule_id)): Path<(String, String)>,
     body: Json<Rule>,
 ) -> impl IntoResponse {
-    let success = db::update_rule(&id, &rule_id, body.0).await;
+    let mut db_lock = db.lock().await;
+    let success = db_lock.update_rule(&id, &rule_id, body.0).await;
     if !success {
         return Err(StatusCode::NOT_FOUND);
     }
@@ -223,8 +253,12 @@ pub async fn update_rule(
         (status = 204, description = "Rule deleted"),
     )
 )]
-pub async fn delete_rule(Path((id, rule_id)): Path<(String, String)>) -> impl IntoResponse {
-    db::delete_rule(&id, &rule_id).await;
+pub async fn delete_rule(
+    State(db): State<DbState>,
+    Path((id, rule_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    db_lock.delete_rule(&id, &rule_id).await;
     StatusCode::NO_CONTENT
 }
 
@@ -241,9 +275,12 @@ pub async fn delete_rule(Path((id, rule_id)): Path<(String, String)>) -> impl In
     )
 )]
 pub async fn get_rule(
+    State(db): State<DbState>,
     Path((id, rule_id)): Path<(String, String)>,
 ) -> Result<Json<Rule>, StatusCode> {
-    let rule = db::get_rule(&id, &rule_id)
+    let db_lock = db.lock().await;
+    let rule = db_lock
+        .get_rule(&id, &rule_id)
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(rule))
@@ -263,10 +300,12 @@ pub async fn get_rule(
     )
 )]
 pub async fn reorder_rules(
+    State(db): State<DbState>,
     Path(id): Path<String>,
     body: Json<ReorderRulesRequest>,
 ) -> impl IntoResponse {
-    let success = db::reorder_rules(&id, body.rule_ids.clone()).await;
+    let mut db_lock = db.lock().await;
+    let success = db_lock.reorder_rules(&id, body.rule_ids.clone()).await;
     if success {
         Ok(StatusCode::OK)
     } else {
@@ -285,8 +324,13 @@ pub async fn reorder_rules(
         (status = 200, description = "Rule created", body = String)
     )
 )]
-pub async fn block_add(Path(id): Path<String>, body: Json<String>) -> impl IntoResponse {
-    db::add_manual_block(id.clone(), body.0).await;
+pub async fn block_add(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<String>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    db_lock.add_manual_block(id.clone(), body.0).await;
     StatusCode::NO_CONTENT
 }
 
@@ -301,8 +345,13 @@ pub async fn block_add(Path(id): Path<String>, body: Json<String>) -> impl IntoR
         (status = 200, description = "Rule created", body = String)
     )
 )]
-pub async fn block_remove(Path(id): Path<String>, body: Json<String>) -> impl IntoResponse {
-    let success = db::remove_manual_block(&id, &body.0).await;
+pub async fn block_remove(
+    State(db): State<DbState>,
+    Path(id): Path<String>,
+    body: Json<String>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    let success = db_lock.remove_manual_block(&id, &body.0).await;
     if !success {
         Err(StatusCode::NOT_FOUND)
     } else {
@@ -321,8 +370,9 @@ pub async fn block_remove(Path(id): Path<String>, body: Json<String>) -> impl In
         (status = 200, description = "List of all blocks", body = HashSet<String>)
     )
 )]
-pub async fn block_list(Path(id): Path<String>) -> impl IntoResponse {
-    let Some(set) = db::get_manual_blocks(&id).await else {
+pub async fn block_list(State(db): State<DbState>, Path(id): Path<String>) -> impl IntoResponse {
+    let db_lock = db.lock().await;
+    let Some(set) = db_lock.get_manual_blocks(&id).await else {
         return Err(StatusCode::NOT_FOUND);
     };
 

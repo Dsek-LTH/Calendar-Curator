@@ -1,5 +1,5 @@
 use crate::processing::event::Event;
-use crate::processing::filter::Field;
+use crate::processing::matcher::Field;
 use crate::processing::transform::Transform;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
