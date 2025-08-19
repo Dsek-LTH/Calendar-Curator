@@ -13,7 +13,7 @@ export interface ActionState {
     | "Substring"
     | "Remove"
     | "TimeDiff";
-  transformParams?: any;
+  transformParams?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 // UI state for creating new rules

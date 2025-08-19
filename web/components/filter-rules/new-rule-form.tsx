@@ -176,17 +176,6 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
               className="p-3 border rounded-lg bg-background space-y-3"
             >
               <div className="flex items-center justify-between">
-                {newRule.actions.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeActionFromNewRule(actionIndex)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
 
               {/* Action Type Selection */}
               <div className="grid grid-cols-2 gap-2">
@@ -244,6 +233,17 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+              </div>
+                {newRule.actions.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeActionFromNewRule(actionIndex)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
 

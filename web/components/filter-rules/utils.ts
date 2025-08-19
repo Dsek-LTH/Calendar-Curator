@@ -33,7 +33,7 @@ export const getMatchTypeLabel = (matchType: Matcher["match_type"]): string => {
   return labels[matchType];
 };
 
-export const getActionColor = (actions: Action[]): string => {
+export const getActionColor = (actions: Action[]) => {
   if (actions.length === 0) return "outline";
 
   // For multiple actions, check if any are blocking

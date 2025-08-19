@@ -154,7 +154,7 @@ export function CalendarUrlCard({
 
       // Get events
       const eventsRes = await fetchClient.GET(`/calendars/{id}/get_events`, {
-        params: { path: { id: calendar_id!! } },
+        params: { path: { id: calendar_id! } },
       });
       const eventsData = eventsRes.data;
       if (!eventsRes.response.ok || !eventsData)
@@ -166,7 +166,7 @@ export function CalendarUrlCard({
       if (window !== undefined) {
         window.history.replaceState(null, "", `?calendarId=${calendar_id}`);
       }
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || "Failed to load calendar");
     } finally {
       setLoading(false);
@@ -201,7 +201,7 @@ export function CalendarUrlCard({
 
       // Reload events with the new URL
       await loadCalendar(newUrl, calendarId);
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || "Failed to update calendar URL");
     } finally {
       setLoading(false);

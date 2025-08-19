@@ -13,7 +13,10 @@ impl SyntaxError {
     }
 
     pub fn with_line(self, line: usize) -> Self {
-        SyntaxError { message: self.message, line: Some(line) }
+        SyntaxError {
+            message: self.message,
+            line: Some(line),
+        }
     }
 }
 
@@ -27,4 +30,4 @@ impl Display for SyntaxError {
     }
 }
 
-impl Error for SyntaxError{}
+impl Error for SyntaxError {}

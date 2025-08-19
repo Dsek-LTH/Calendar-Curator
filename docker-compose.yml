@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: calendar-curator-app
+    ports:
+      - "3000:3000"
+      - "8000:8000"
+    volumes:
+      - ./data/:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/calendars.json
+    restart: unless-stopped
+
+networks:
+  calendar-network:
+    driver: bridge

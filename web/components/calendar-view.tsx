@@ -57,7 +57,7 @@ export function CalendarView({
   };
 
   const getFirstDayOfMonth = (date: Date) => {
-    let sundayFirst = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const sundayFirst = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     // Adjust based on user preference
     if (calendarSettings.firstDayOfWeek === "monday") {
       return (sundayFirst + 6) % 7;
@@ -67,7 +67,7 @@ export function CalendarView({
   };
 
   const getLastDayOfMonth = (date: Date) => {
-    let sundayFirst = new Date(
+    const sundayFirst = new Date(
       date.getFullYear(),
       date.getMonth() + 1,
       0,
@@ -104,8 +104,8 @@ export function CalendarView({
         const aEvent = a.transformed || a.original;
         const bEvent = b.transformed || b.original;
         return (
-          new Date(aEvent.start!!).getTime() -
-          new Date(bEvent.start!!).getTime()
+          new Date(aEvent.start!).getTime() -
+          new Date(bEvent.start!).getTime()
         );
       });
   };
@@ -280,20 +280,20 @@ export function CalendarView({
                               }
                               e.stopPropagation();
                             }}
-                            title={`${displayEvent.summary} - ${formatTime(displayEvent.start!!)}`}
+                            title={`${displayEvent.summary} - ${formatTime(displayEvent.start!)}`}
                           >
                             <div className="flex items-center justify-between gap-1">
                               <div className="flex items-center gap-1 truncate">
                                 {hasTransformedTime && (
                                   <span className="text-muted-foreground line-through text-[10px]">
-                                    {formatTime(event.original.start!!)}
+                                    {formatTime(event.original.start!)}
                                   </span>
                                 )}
                                 {hasTransformedTime && (
                                   <ArrowRightIcon className="h-2 w-2 text-muted-foreground" />
                                 )}
                                 <span className="font-medium">
-                                  {formatTime(displayEvent.start!!)}
+                                  {formatTime(displayEvent.start!)}
                                 </span>
                               </div>
                               <div className="ml-auto" />

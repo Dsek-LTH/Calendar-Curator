@@ -11,8 +11,11 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // Get database path from environment variable or use default
+    let db_path = std::env::var("DATABASE_PATH").unwrap_or_else(|_| "calendars.json".to_string());
+
     // Create shared database instance
-    let db_state = db::create_db_instance("calendars.json".to_string()).await;
+    let db_state = db::create_db_instance(db_path).await;
 
     let socket_address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
     let listener = tokio::net::TcpListener::bind(socket_address).await?;
@@ -33,6 +36,7 @@ async fn main() -> std::io::Result<()> {
         .with_state(db_state)
         .layer(cors);
 
+    println!("Calendar Curator backend starting on {}", socket_address);
     axum::serve(listener, app.into_make_service()).await
 
     // let str = get_calendar(Url::parse("https://cloud.timeedit.net/lu/web/lth1/ri6X80g51560Y2QQ95Z59X0Y0Yy5002495967Q564f596Z53X04Y55545761924X5595951539X54444399XQ55X554X676349yZoXy1u6beZnQQ90Z.ics")?).await;

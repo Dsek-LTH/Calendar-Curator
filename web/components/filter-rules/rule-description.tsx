@@ -11,7 +11,7 @@ interface RuleDescriptionProps {
 }
 
 export function RuleDescription({ rule }: RuleDescriptionProps) {
-  const actionDescriptions = rule.actions.map((action, _index) => {
+  const actionDescriptions = rule.actions.map((action, _) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (typeof action === "string") {
       return { type: action, description: action };
     } else {
@@ -77,7 +77,7 @@ export function RuleDescription({ rule }: RuleDescriptionProps) {
                 <span className="text-muted-foreground mx-1">
                   {getMatchTypeLabel(matcher.match_type)}
                 </span>
-                <span className="font-medium">"{matcher.value}"</span>
+                <span className="font-medium">&quot;{matcher.value}&quot;</span>
               </span>
             )),
           )}

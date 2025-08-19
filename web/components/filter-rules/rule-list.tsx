@@ -72,7 +72,7 @@ export function RuleList({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <Badge
-                variant={getActionColor(rule.actions) as any}
+                variant={getActionColor(rule.actions)}
                 className="text-xs"
               >
                 {rule.actions.length === 1

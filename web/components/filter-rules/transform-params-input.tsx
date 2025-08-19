@@ -21,7 +21,7 @@ export function TransformParamsInput({
     return null;
   }
 
-  const updateTransformParams = (updates: any) => {
+  const updateTransformParams = (updates: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     onUpdate({
       transformParams: {
         ...action.transformParams,
