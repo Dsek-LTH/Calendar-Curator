@@ -48,14 +48,16 @@ impl Calendar {
                 let manually_allowlisted = self.manually_allowlisted.contains(&event.uid);
                 let mut prev_event = event.clone();
                 for rule in &self.rules {
-                    let (event, matched) = rule.apply(event.clone());
-                    if matched {
+                    let (event, _) = rule.apply(event.clone());
+                    if let Some(event) = event {
+                        prev_event = event
+                    } else {
+                        // Make sure to not return None
                         if manually_allowlisted {
-                            return Some(event.unwrap_or(prev_event));
+                            return Some(prev_event);
                         }
-                        return event;
+                        return None;
                     }
-                    prev_event = event.unwrap_or(prev_event);
                 }
                 Some(event.clone())
             })
