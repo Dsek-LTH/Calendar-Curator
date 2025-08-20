@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Rule, fetchClient } from "@/lib/api";
 
 export const useRulesManager = (
@@ -8,17 +8,7 @@ export const useRulesManager = (
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Load rules when calendar ID changes
-  useEffect(() => {
-    if (calendarId) {
-      loadRules();
-    } else {
-      setRules([]);
-    }
-  }, [calendarId]);
-
-  const loadRules = async () => {
+  const loadRules = useCallback(async () => {
     if (!calendarId) return;
 
     setLoading(true);
@@ -38,7 +28,16 @@ export const useRulesManager = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [calendarId]);
+
+  // Load rules when calendar ID changes
+  useEffect(() => {
+    if (calendarId) {
+      loadRules();
+    } else {
+      setRules([]);
+    }
+  }, [calendarId, loadRules]);
 
   const createRule = async (rule: Rule) => {
     if (!calendarId) return;

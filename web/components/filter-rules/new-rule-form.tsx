@@ -176,65 +176,66 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
               className="p-3 border rounded-lg bg-background space-y-3"
             >
               <div className="flex items-center justify-between">
-
-              {/* Action Type Selection */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Action Type:</Label>
-                  <Select
-                    value={action.type}
-                    onValueChange={(value) =>
-                      updateAction(actionIndex, {
-                        type: value as "Block" | "Allow" | "FieldTransform",
-                        transformField: undefined,
-                        transformType: undefined,
-                        transformParams: undefined,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Block">Block Event</SelectItem>
-                      <SelectItem value="Allow">Allow Event</SelectItem>
-                      <SelectItem value="FieldTransform">
-                        Transform Field
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Transform Field Selection */}
-                {action.type === "FieldTransform" && (
+                {/* Action Type Selection */}
+                <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Transform Field:
-                    </Label>
+                    <Label className="text-sm font-medium">Action Type:</Label>
                     <Select
-                      value={action.transformField || ""}
+                      value={action.type}
                       onValueChange={(value) =>
                         updateAction(actionIndex, {
-                          transformField: value as Field,
+                          type: value as "Block" | "Allow" | "FieldTransform",
+                          transformField: undefined,
                           transformType: undefined,
                           transformParams: undefined,
                         })
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select field" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Summary">Title</SelectItem>
-                        <SelectItem value="Description">Description</SelectItem>
-                        <SelectItem value="Location">Location</SelectItem>
-                        <SelectItem value="StartDate">Start Date</SelectItem>
-                        <SelectItem value="EndDate">End Date</SelectItem>
+                        <SelectItem value="Block">Block Event</SelectItem>
+                        <SelectItem value="Allow">Allow Event</SelectItem>
+                        <SelectItem value="FieldTransform">
+                          Transform Field
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-              </div>
+
+                  {/* Transform Field Selection */}
+                  {action.type === "FieldTransform" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Transform Field:
+                      </Label>
+                      <Select
+                        value={action.transformField || ""}
+                        onValueChange={(value) =>
+                          updateAction(actionIndex, {
+                            transformField: value as Field,
+                            transformType: undefined,
+                            transformParams: undefined,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select field" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Summary">Title</SelectItem>
+                          <SelectItem value="Description">
+                            Description
+                          </SelectItem>
+                          <SelectItem value="Location">Location</SelectItem>
+                          <SelectItem value="StartDate">Start Date</SelectItem>
+                          <SelectItem value="EndDate">End Date</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
                 {newRule.actions.length > 1 && (
                   <Button
                     variant="ghost"

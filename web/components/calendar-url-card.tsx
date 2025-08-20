@@ -51,6 +51,20 @@ export function CalendarUrlCard({
     }
   }, []);
 
+  // Check if the current hostname is local
+  const isLocalHost = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const hostname = window.location.hostname;
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("172.") ||
+      hostname.endsWith(".local")
+    );
+  }, []);
+
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const queryStringParams = queryString.parse(window.location.search);
@@ -87,13 +101,6 @@ export function CalendarUrlCard({
             setIcalUrl(res.data);
             loadCalendar(res.data, calendarId);
             setProxyUrl(`/api/calendars/${calendarId}/feed`);
-            if (typeof window !== "undefined") {
-              window.history.replaceState(
-                null,
-                "",
-                `?calendarId=${calendarId}`,
-              );
-            }
             return true;
           } else {
             setError("Failed to load calendar URL");
@@ -164,10 +171,10 @@ export function CalendarUrlCard({
       setEvents(eventsData || []);
       setFilteredEvents(eventsData || []);
       setProxyUrl(`/api/calendars/${calendar_id}/feed`);
-      if (window !== undefined) {
-        window.history.replaceState(null, "", `?calendarId=${calendar_id}`);
+      if (typeof window !== "undefined") {
+        window.history.pushState(null, "", `?calendarId=${calendar_id}`);
       }
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       setError(err.message || "Failed to load calendar");
     } finally {
       setLoading(false);
@@ -202,7 +209,7 @@ export function CalendarUrlCard({
 
       // Reload events with the new URL
       await loadCalendar(newUrl, calendarId);
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       setError(err.message || "Failed to update calendar URL");
     } finally {
       setLoading(false);
@@ -295,15 +302,27 @@ export function CalendarUrlCard({
           </div>
         )}
         {proxyUrl && (
-          <div className="space-y-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-            <p className="text-sm font-medium text-green-800">
+          <div
+            className={`space-y-2 p-4 rounded-lg border ${
+              isLocalHost
+                ? "bg-gradient-to-r from-red-50 to-rose-50 border-red-200"
+                : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+            }`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                isLocalHost ? "text-red-800" : "text-green-800"
+              }`}
+            >
               Filtered Proxy URL:
             </p>
             <div className="flex gap-2">
               <Input
                 value={`${windowLocation}${proxyUrl}`}
                 readOnly
-                className="flex-1 font-mono text-xs bg-white border-green-200"
+                className={`flex-1 font-mono text-xs bg-white ${
+                  isLocalHost ? "border-red-200" : "border-green-200"
+                }`}
               />
               <Button
                 variant="outline"
@@ -311,23 +330,33 @@ export function CalendarUrlCard({
                 onClick={() =>
                   navigator.clipboard.writeText(`${windowLocation}${proxyUrl}`)
                 }
-                className="border-green-300 text-green-700 hover:bg-green-100"
+                className={
+                  isLocalHost
+                    ? "border-red-300 text-red-700 hover:bg-red-100"
+                    : "border-green-300 text-green-700 hover:bg-green-100"
+                }
               >
                 Copy
               </Button>
             </div>
-            <p className="text-xs text-green-700">
-              Use this URL in your calendar app to get the filtered events
+            <p
+              className={`text-xs ${
+                isLocalHost ? "text-red-700" : "text-green-700"
+              }`}
+            >
+              {isLocalHost
+                ? "Warning: This is a local URL and won't work from other devices. You need to access this page from a public IP/domain."
+                : "Use this URL in your calendar app to get the filtered events"}
             </p>
           </div>
         )}
       </CardContent>
       <CardFooter>
         {calendarId && (
-            <p className="text-xs text-slate-600">
-              Calendar ID:{" "}
-              <span className="font-mono text-slate-800">{calendarId}</span>
-            </p>
+          <p className="text-xs text-slate-600">
+            Calendar ID:{" "}
+            <span className="font-mono text-slate-800">{calendarId}</span>
+          </p>
         )}
       </CardFooter>
     </Card>

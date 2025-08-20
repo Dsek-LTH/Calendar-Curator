@@ -11,7 +11,7 @@ interface RuleDescriptionProps {
 }
 
 export function RuleDescription({ rule }: RuleDescriptionProps) {
-  const actionDescriptions = rule.actions.map((action, _) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const actionDescriptions = rule.actions.map((action, _) => {
     if (typeof action === "string") {
       return { type: action, description: action };
     } else {

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "iCal stream filter",
-  description: "Proxy, filter, and manage your calendar subscriptions",
+  title: "Calendar Curator",
+  description: "Curate your calendar events with custom rules",
 };
 
 export default function RootLayout({
