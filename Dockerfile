@@ -73,6 +73,6 @@ ENV DATABASE_PATH=/app/data/calendars.json
 ENV NODE_ENV=production
 
 # Expose both ports
-EXPOSE 3000 8000
+EXPOSE 3000
 
 CMD ["/app/start.sh"]

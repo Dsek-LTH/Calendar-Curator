@@ -229,8 +229,8 @@ export function CalendarUrlCard({
           <Input
             placeholder={
               windowLocation
-                ? `https://calendar.google.com/calendar/ical/... OR ${windowLocation}/calendars/<id>/feed`
-                : "https://calendar.google.com/calendar/ical/... OR /calendars/<id>/feed"
+                ? `https://calendar.google.com/calendar/ical/... OR ${windowLocation}/api/calendars/<id>/feed`
+                : "https://calendar.google.com/calendar/ical/... OR /api/calendars/<id>/feed"
             }
             value={icalUrl}
             onChange={(e) => setIcalUrl(e.target.value)}
