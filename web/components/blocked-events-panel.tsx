@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EyeIcon, EyeOffIcon, ShieldCheckIcon, ShieldX, ShieldXIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, ShieldCheckIcon, ShieldXIcon } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
 
 interface BlockedEventsPanelProps {
