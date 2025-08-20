@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EyeIcon, EyeOffIcon, ShieldCheckIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, ShieldCheckIcon, ShieldX, ShieldXIcon } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
 
 interface BlockedEventsPanelProps {
@@ -13,10 +13,10 @@ interface BlockedEventsPanelProps {
 }
 
 export function BlockedEventsPanel({
-  events,
-  onUnblock,
-  onRemoveFromAllowlist,
-}: BlockedEventsPanelProps) {
+                                     events,
+                                     onUnblock,
+                                     onRemoveFromAllowlist,
+                                   }: BlockedEventsPanelProps) {
   const blockedEvents = events.filter((e) => e.manually_blocked);
   const allowlistedEvents = events.filter((e) => e.manually_allowlisted);
   const totalEvents = blockedEvents.length + allowlistedEvents.length;
@@ -28,29 +28,30 @@ export function BlockedEventsPanel({
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: localStorage.getItem("calendar-time-format") === "12-hour" || false,
     });
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-orange-50">
+      <CardHeader className="">
         <CardTitle className="flex items-center gap-2">
-          <EyeOffIcon className="h-5 w-5" />
+          <EyeOffIcon className="h-5 w-5"/>
           Manual Overrides ({totalEvents})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+      <CardContent className="space-y-4 pb-52 max-h-[600px] p-6">
         {/* Blocked Events Section */}
         {blockedEvents.length > 0 && (
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <EyeOffIcon className="h-4 w-4" />
+              <EyeOffIcon className="h-4 w-4"/>
               Blocked Events ({blockedEvents.length})
             </h4>
             {blockedEvents.map((event) => (
               <div
                 key={`blocked-${event.original.uid}`}
-                className="p-3 border rounded-lg bg-destructive/5 space-y-2"
+                className="p-3 border rounded-lg bg-gradient-to-r from-red-50 to-rose-50 border-red-200 space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-medium text-sm leading-tight">
@@ -60,8 +61,9 @@ export function BlockedEventsPanel({
                     variant="outline"
                     size="sm"
                     onClick={() => onUnblock(event)}
+                    className="border-green-300 text-green-700 hover:bg-green-100"
                   >
-                    <EyeIcon className="h-4 w-4" />
+                    <EyeIcon className="h-4 w-4"/>
                     Unblock
                   </Button>
                 </div>
@@ -90,13 +92,13 @@ export function BlockedEventsPanel({
         {allowlistedEvents.length > 0 && (
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <ShieldCheckIcon className="h-4 w-4" />
+              <ShieldCheckIcon className="h-4 w-4"/>
               Allowlisted Events ({allowlistedEvents.length})
             </h4>
             {allowlistedEvents.map((event) => (
               <div
                 key={`allowlisted-${event.original.uid}`}
-                className="p-3 border rounded-lg bg-green-50 space-y-2"
+                className="p-3 border rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-medium text-sm leading-tight">
@@ -106,8 +108,9 @@ export function BlockedEventsPanel({
                     variant="outline"
                     size="sm"
                     onClick={() => onRemoveFromAllowlist(event)}
+                    className="border-red-300 text-red-700 hover:bg-red-100"
                   >
-                    <ShieldCheckIcon className="h-4 w-4" />
+                    <ShieldXIcon className="h-4 w-4"/>
                     Remove
                   </Button>
                 </div>
@@ -126,7 +129,7 @@ export function BlockedEventsPanel({
 
                 <Badge
                   variant="secondary"
-                  className="text-xs bg-green-100 text-green-800"
+                  className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300"
                 >
                   Protected from rules
                 </Badge>

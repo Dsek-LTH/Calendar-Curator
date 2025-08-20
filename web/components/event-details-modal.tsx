@@ -51,6 +51,7 @@ export function EventDetailsModal({
       time: date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: localStorage.getItem("calendar-time-format") === "12-hour" || false,
       }),
     };
   };

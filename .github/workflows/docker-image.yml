@@ -5,6 +5,8 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [ published ]
 
 env:
   REGISTRY: ghcr.io
@@ -39,6 +41,7 @@ jobs:
         tags: |
           type=ref,event=branch
           type=ref,event=pr
+          type=raw,value={{release.tag_name}},enable={{github.event_name == 'release'}}
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 

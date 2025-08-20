@@ -2,6 +2,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -214,17 +215,17 @@ export function CalendarUrlCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50">
+      <CardHeader className="">
         <CardTitle className="flex items-center gap-2">
           <LinkIcon className="h-5 w-5" />
           Calendar Subscription
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="">
           Enter your iCal subscription or proxy feed URL to get started
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-6">
         <div className="flex gap-2">
           <Input
             placeholder={
@@ -235,9 +236,13 @@ export function CalendarUrlCard({
             value={icalUrl}
             onChange={(e) => setIcalUrl(e.target.value)}
             onKeyDown={handleKeyPress}
-            className="flex-1"
+            className="flex-1 border-slate-200 focus:border-blue-400 focus:ring-blue-400"
           />
-          <Button onClick={() => loadCalendar(icalUrl)} disabled={loading}>
+          <Button
+            onClick={() => loadCalendar(icalUrl)}
+            disabled={loading}
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          >
             {loading ? "Loading..." : "Load Calendar"}
           </Button>
           {calendarId && !isChangingUrl && (
@@ -245,26 +250,30 @@ export function CalendarUrlCard({
               variant="outline"
               onClick={() => setIsChangingUrl(true)}
               disabled={loading}
+              className="border-blue-200 text-blue-600 hover:bg-blue-50"
             >
               Change URL
             </Button>
           )}
         </div>
         {isChangingUrl && (
-          <div className="space-y-2 p-3 border rounded-md bg-muted/50">
-            <p className="text-sm font-medium">Update Calendar URL:</p>
+          <div className="space-y-2 p-3 border rounded-md bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <p className="text-sm font-medium text-blue-800">
+              Update Calendar URL:
+            </p>
             <div className="flex gap-2">
               <Input
                 placeholder="Enter new iCal URL"
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
-                className="flex-1"
+                className="flex-1 border-blue-200 focus:border-blue-400"
                 disabled={loading}
               />
               <Button
                 onClick={handleChangeUrl}
                 disabled={loading || !newUrl.trim()}
                 size="sm"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
               >
                 {loading ? "Updating..." : "Update"}
               </Button>
@@ -273,6 +282,7 @@ export function CalendarUrlCard({
                 size="sm"
                 onClick={cancelChangeUrl}
                 disabled={loading}
+                className="border-slate-300 hover:bg-slate-50"
               >
                 Cancel
               </Button>
@@ -280,18 +290,20 @@ export function CalendarUrlCard({
           </div>
         )}
         {error && (
-          <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+          <div className="text-sm text-red-700 bg-gradient-to-r from-red-50 to-rose-50 p-3 rounded-md border border-red-200">
             {error}
           </div>
         )}
         {proxyUrl && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Filtered Proxy URL:</p>
+          <div className="space-y-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <p className="text-sm font-medium text-green-800">
+              Filtered Proxy URL:
+            </p>
             <div className="flex gap-2">
               <Input
                 value={`${windowLocation}${proxyUrl}`}
                 readOnly
-                className="flex-1 font-mono text-xs"
+                className="flex-1 font-mono text-xs bg-white border-green-200"
               />
               <Button
                 variant="outline"
@@ -299,23 +311,25 @@ export function CalendarUrlCard({
                 onClick={() =>
                   navigator.clipboard.writeText(`${windowLocation}${proxyUrl}`)
                 }
+                className="border-green-300 text-green-700 hover:bg-green-100"
               >
                 Copy
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-green-700">
               Use this URL in your calendar app to get the filtered events
             </p>
           </div>
         )}
-        {calendarId && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">
-              Calendar ID: <span className="font-mono">{calendarId}</span>
-            </p>
-          </div>
-        )}
       </CardContent>
+      <CardFooter>
+        {calendarId && (
+            <p className="text-xs text-slate-600">
+              Calendar ID:{" "}
+              <span className="font-mono text-slate-800">{calendarId}</span>
+            </p>
+        )}
+      </CardFooter>
     </Card>
   );
 }

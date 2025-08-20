@@ -87,16 +87,18 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
-            <CalendarIcon className="h-8 w-8 text-primary" />
-            iCal Stream Filter
+          <h1 className="text-4xl font-bold flex items-center justify-center gap-2 ">
+            <div className="gap-2 flex items-center justify-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <CalendarIcon className="h-8 w-8 text-blue-600" />
+            Calendar Curator
+            </div>
           </h1>
-          <p className="text-muted-foreground">
-            Proxy, filter, and manage your calendar subscriptions
+          <p className="text-slate-600">
+            Curate your calendar events with custom rules
           </p>
         </div>
 
@@ -142,10 +144,10 @@ export function Home() {
         )}
 
         {events.length === 0 && !loading && (
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-blue-50">
             <CardContent className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <CalendarIcon className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <p className="text-slate-600">
                 Enter an iCal URL above to start filtering your calendar
               </p>
             </CardContent>

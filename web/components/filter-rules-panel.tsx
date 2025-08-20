@@ -19,22 +19,22 @@ export function RulesPanel({
     useRulesManager(calendarId, onRuleChange);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-purple-50">
+      <CardHeader className="">
         <CardTitle className="flex items-center gap-2">
           <ScaleIcon className="h-5 w-5" />
           Filter Rules ({rules.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-6">
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <div className="p-3 rounded-lg bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {!calendarId && (
-          <div className="text-center py-6 text-muted-foreground text-sm">
+          <div className="text-center py-6 text-slate-500 text-sm bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200">
             Please create or load a calendar to manage filter rules.
           </div>
         )}
