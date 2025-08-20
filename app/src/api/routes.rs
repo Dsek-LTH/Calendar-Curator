@@ -24,6 +24,7 @@ pub(crate) fn router() -> axum::Router<DbState> {
         .routes(routes!(update_rule))
         .routes(routes!(delete_rule))
         .routes(routes!(get_rule))
+        .routes(routes!(duplicate_rule))
         .routes(routes!(reorder_rules))
         .routes(routes!(block_add))
         .routes(routes!(block_remove))
@@ -124,29 +125,34 @@ pub async fn get_events(
                 if matched {
                     filtered_by.push(rule.id.clone());
 
-                    if let Some(transformed) = transformed_event {
-                        // Check what fields changed
-                        if original_event.summary != transformed.summary {
-                            changed_fields.push("summary".to_string());
-                        }
-                        if original_event.description != transformed.description {
-                            changed_fields.push("description".to_string());
-                        }
-                        if original_event.location != transformed.location {
-                            changed_fields.push("location".to_string());
-                        }
-                        if original_event.start != transformed.start {
-                            changed_fields.push("start".to_string());
-                        }
-                        if original_event.end != transformed.end {
-                            changed_fields.push("end".to_string());
-                        }
-
-                        if !rule_blocked {
-                            current_event = transformed;
-                        }
-                    } else {
+                    if transformed_event.is_none() {
+                        // If the rule blocks the event, we stop processing further rules
                         rule_blocked = true;
+                    }
+
+                    if !rule_blocked {
+                        if let Some(transformed) = transformed_event {
+                            // Check what fields changed
+                            if original_event.summary != transformed.summary {
+                                changed_fields.push("summary".to_string());
+                            }
+                            if original_event.description != transformed.description {
+                                changed_fields.push("description".to_string());
+                            }
+                            if original_event.location != transformed.location {
+                                changed_fields.push("location".to_string());
+                            }
+                            if original_event.start != transformed.start {
+                                changed_fields.push("start".to_string());
+                            }
+                            if original_event.end != transformed.end {
+                                changed_fields.push("end".to_string());
+                            }
+
+                            if !rule_blocked {
+                                current_event = transformed;
+                            }
+                        }
                     }
                 }
             }
@@ -364,6 +370,30 @@ pub async fn get_rule(
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(rule))
+}
+
+#[utoipa::path(
+    post,
+    path = "/calendars/{id}/rules/{rule_id}/duplicate",
+    params(
+        ("id" = String, Path, description = "The ID of the calendar"),
+        ("rule_id" = String, Path, description = "The ID of the rule to duplicate")
+    ),
+    responses(
+        (status = 200, description = "Rule duplicated successfully", body = String),
+        (status = 404, description = "Rule or calendar not found")
+    )
+)]
+pub async fn duplicate_rule(
+    State(db): State<DbState>,
+    Path((id, rule_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let mut db_lock = db.lock().await;
+    let new_rule_id = db_lock.duplicate_rule(&id, &rule_id).await;
+    match new_rule_id {
+        Some(id) => Ok(Json(id)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
 
 #[utoipa::path(

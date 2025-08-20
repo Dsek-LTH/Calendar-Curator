@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScaleIcon } from "lucide-react";
 import { useRulesManager } from "./filter-rules/use-rules-manager";
-import { NewRuleForm } from "./filter-rules/new-rule-form";
+import { RuleForm } from "./filter-rules/rule-form";
 import { RuleList } from "./filter-rules/rule-list";
 
 export function RulesPanel({
@@ -15,8 +15,15 @@ export function RulesPanel({
   onRuleHover?: (ruleId: string | null) => void;
   onRuleChange?: () => void;
 }) {
-  const { rules, error, createRule, deleteRule, reorderRules } =
-    useRulesManager(calendarId, onRuleChange);
+  const {
+    rules,
+    error,
+    createRule,
+    deleteRule,
+    reorderRules,
+    updateRule,
+    duplicateRule,
+  } = useRulesManager(calendarId, onRuleChange);
 
   return (
     <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-purple-50">
@@ -42,13 +49,15 @@ export function RulesPanel({
         {calendarId && (
           <>
             {/* Add New Rule Form */}
-            <NewRuleForm onCreateRule={createRule} />
+            <RuleForm onCreateRule={createRule} />
 
             {/* Existing Rules List */}
             <RuleList
               rules={rules}
               onDeleteRule={deleteRule}
               onReorderRules={reorderRules}
+              onUpdateRule={updateRule}
+              onDuplicateRule={duplicateRule}
               onRuleHover={onRuleHover}
             />
           </>

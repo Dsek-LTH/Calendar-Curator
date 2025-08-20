@@ -3,7 +3,7 @@ use crate::utils::{DateFormat, parse_datetime};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, ToSchema, Serialize, Deserialize, Clone)]
+#[derive(Debug, ToSchema, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Event {
     pub(crate) start: Option<DateFormat>,
     pub(crate) end: Option<DateFormat>,

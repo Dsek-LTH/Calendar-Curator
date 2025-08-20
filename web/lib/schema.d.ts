@@ -212,6 +212,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/calendars/{id}/rules/{rule_id}/duplicate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["duplicate_rule"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/calendars/{id}/rules/{rule_id}/get": {
     parameters: {
       query?: never;
@@ -368,7 +384,7 @@ export interface components {
         }
       | {
           Substring: {
-            end: number;
+            end?: number | null;
             start: number;
           };
         }
@@ -742,6 +758,38 @@ export interface operations {
     responses: {
       /** @description Rule deleted */
       204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  duplicate_rule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the calendar */
+        id: string;
+        /** @description The ID of the rule to duplicate */
+        rule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Rule duplicated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Rule or calendar not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };

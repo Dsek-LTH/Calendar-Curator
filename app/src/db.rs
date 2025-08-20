@@ -162,6 +162,26 @@ impl Db {
         }
     }
 
+    pub async fn duplicate_rule(&mut self, calendar_id: &str, rule_id: &str) -> Option<String> {
+        if let Some(calendar) = self.calendars.get_mut(calendar_id) {
+            // Find the original rule and its position
+            let rule_position = calendar.rules.iter().position(|rule| rule.id == rule_id)?;
+            let original_rule = calendar.rules[rule_position].clone();
+
+            // Create a new rule with a new ID but same content
+            let mut duplicated_rule = original_rule;
+            duplicated_rule.id = Uuid::new_v4().to_string();
+            let new_rule_id = duplicated_rule.id.clone();
+
+            // Insert the duplicated rule right after the original rule
+            calendar.rules.insert(rule_position + 1, duplicated_rule);
+
+            self.save_data_bg().await;
+            return Some(new_rule_id);
+        }
+        None
+    }
+
     pub async fn reorder_rules(&mut self, calendar_id: &str, rule_ids: Vec<String>) -> bool {
         if let Some(calendar) = self.calendars.get_mut(calendar_id) {
             // Create a map of rule_id to rule for quick lookup

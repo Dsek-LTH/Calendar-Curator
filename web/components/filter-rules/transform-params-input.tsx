@@ -81,7 +81,7 @@ export function TransformParamsInput({
             {action.transformParams?.value || 0}{" "}
             {action.transformParams?.unit || "minutes"}{" "}
             {action.transformParams?.isNegative ? "from" : "to"} the selected
-            date field.
+            time field.
           </div>
         </div>
       );
@@ -162,9 +162,9 @@ export function TransformParamsInput({
             type="number"
             placeholder="End position"
             value={action.transformParams?.end || ""}
-            onChange={(e) =>
-              updateTransformParams({ end: parseInt(e.target.value) || 0 })
-            }
+            onChange={(e) => {
+              updateTransformParams({ end: parseInt(e.target.value) || null });
+            }}
           />
         </div>
       );

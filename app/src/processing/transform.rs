@@ -47,7 +47,7 @@ pub enum StringTransform {
     },
     Substring {
         start: usize,
-        end: usize,
+        end: Option<usize>,
     },
     Remove,
 }
@@ -65,9 +65,10 @@ impl StringTransform {
                 .map(|re| re.replace_all(input, replacement).to_string())
                 .unwrap_or_else(|_| input.to_string()),
             StringTransform::Replace { with } => with.clone(),
-            StringTransform::Substring { start, end } => {
-                input.get(*start..*end).unwrap_or("").to_string()
-            }
+            StringTransform::Substring { start, end } => input
+                .get(*start..end.unwrap_or(input.len()))
+                .unwrap_or("")
+                .to_string(),
             StringTransform::Remove => String::new(),
         }
     }

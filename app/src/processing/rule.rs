@@ -2,6 +2,7 @@ use crate::processing::action::Action;
 use crate::processing::event::Event;
 use crate::processing::matcher::Matcher;
 use serde::{Deserialize, Serialize};
+use std::cmp::PartialEq;
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
@@ -37,18 +38,25 @@ impl Rule {
         }
 
         if matches {
-            let mut event = event;
+            let mut transformed_event = event.clone();
             for action in &self.actions {
-                if let Some(transformed_event) = action.apply(event.clone()) {
-                    event = transformed_event;
+                if let Some(transformed_event_after_action) =
+                    action.apply(transformed_event.clone())
+                {
+                    transformed_event = transformed_event_after_action;
                 } else {
                     // If the action returns None, it means the event is blocked
                     return (None, true);
                 }
             }
 
+            if transformed_event == event {
+                // If the event was not changed by any action, it wasn't "matched"
+                return (Some(transformed_event), false);
+            }
+
             // If we reach here, the event was transformed or allowed
-            (Some(event), true)
+            (Some(transformed_event), true)
         } else {
             (Some(event), false)
         }

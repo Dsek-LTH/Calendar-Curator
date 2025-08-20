@@ -112,6 +112,45 @@ export const useRulesManager = (
     }
   };
 
+  const updateRule = async (ruleId: string, rule: Rule) => {
+    if (!calendarId) return;
+
+    try {
+      await fetchClient.PUT("/calendars/{id}/rules/{rule_id}/update", {
+        params: { path: { id: calendarId, rule_id: ruleId } },
+        body: rule,
+      });
+
+      // Reload rules after update
+      await loadRules();
+
+      // Trigger event reload to update filtered_by
+      onRuleChange?.();
+    } catch (err) {
+      console.error("Failed to update rule:", err);
+      setError("Failed to update rule");
+    }
+  };
+
+  const duplicateRule = async (rule: Rule) => {
+    if (!calendarId) return;
+
+    try {
+      await fetchClient.POST("/calendars/{id}/rules/{rule_id}/duplicate", {
+        params: { path: { id: calendarId, rule_id: rule.id } },
+      });
+
+      // Reload rules after duplication
+      await loadRules();
+
+      // Trigger event reload to update filtered_by
+      onRuleChange?.();
+    } catch (err) {
+      console.error("Failed to duplicate rule:", err);
+      setError("Failed to duplicate rule");
+    }
+  };
+
   return {
     rules,
     loading,
@@ -119,6 +158,8 @@ export const useRulesManager = (
     createRule,
     deleteRule,
     reorderRules,
+    updateRule,
+    duplicateRule,
     loadRules,
   };
 };

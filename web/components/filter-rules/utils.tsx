@@ -7,6 +7,7 @@ import {
   DateTransform,
   StringTransform,
   FieldTransform,
+  Rule,
 } from "@/lib/api";
 import { NewRuleState, ActionState } from "./types";
 import { parseTimeFromUTC } from "@/lib/utils";
@@ -74,7 +75,7 @@ export const getTransformDescription = (action: Action): string | null => {
         } else if ("Replace" in stringTransform) {
           return `Replace ${field} with "${stringTransform.Replace.with}"`;
         } else if ("Substring" in stringTransform) {
-          return `Extract substring (${stringTransform.Substring.start}-${stringTransform.Substring.end}) from ${field}`;
+          return `Extract substring (${stringTransform.Substring.start}-${stringTransform.Substring.end ?? "end"}) from ${field}`;
         }
       }
     } else if ("DateTransform" in fieldTransform.transform) {
@@ -189,7 +190,7 @@ export const buildActionFromActionState = (
         stringTransform = {
           Substring: {
             start: actionState.transformParams?.start || 0,
-            end: actionState.transformParams?.end || 0,
+            end: actionState.transformParams?.end,
           },
         };
         break;
@@ -233,26 +234,19 @@ export const isActionStateValid = (actionState: ActionState): boolean => {
 
     switch (actionState.transformType) {
       case "Substitute":
-        return !!(
-          actionState.transformParams?.from?.trim() &&
-          actionState.transformParams?.to?.trim()
-        );
+        return !!actionState.transformParams?.from?.trim();
+      // to is optional
       case "Suffix":
         return !!actionState.transformParams?.suffix?.trim();
       case "Prefix":
         return !!actionState.transformParams?.prefix?.trim();
       case "RegexSubstitute":
-        return !!(
-          actionState.transformParams?.pattern?.trim() &&
-          actionState.transformParams?.replacement?.trim()
-        );
+        return !!actionState.transformParams?.pattern?.trim();
+      // to is optional
       case "Replace":
         return !!actionState.transformParams?.with?.trim();
       case "Substring":
-        return (
-          actionState.transformParams?.start != null &&
-          actionState.transformParams?.end != null
-        );
+        return actionState.transformParams?.start != null;
       case "Remove":
         return true;
       case "TimeDiff":
@@ -279,7 +273,7 @@ export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
   if (hasInvalidActions) return true;
 
   // For date fields, allow empty values - no validation needed
-  const hasInvalidMatchers = newRule.matchers.some((group) =>
+  return newRule.matchers.some((group) =>
     group.some((matcher) => {
       // Date fields can have just a comma in them, not allowed
       if (matcher.field === "StartTime" || matcher.field === "EndTime") {
@@ -289,8 +283,6 @@ export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
       return !matcher.value?.trim();
     }),
   );
-
-  return hasInvalidMatchers;
 };
 
 // Format matcher value for display
@@ -392,4 +384,111 @@ export const formatMatcherValue = (matcher: Matcher): React.JSX.Element => {
     default:
       return <span>"{matcher.value}"</span>;
   }
+};
+
+// Convert Rule to NewRuleState for editing
+export const ruleToNewRuleState = (rule: Rule): NewRuleState => {
+  const actions: ActionState[] = rule.actions.map((action) => {
+    if (typeof action === "string") {
+      return { type: action };
+    }
+
+    // Handle FieldTransform action
+    const fieldTransform = action.FieldTransform;
+    const actionState: ActionState = {
+      type: "FieldTransform",
+      transformField: fieldTransform.field,
+    };
+
+    if ("StringTransform" in fieldTransform.transform) {
+      const stringTransform = fieldTransform.transform.StringTransform;
+
+      if (typeof stringTransform === "string" && stringTransform === "Remove") {
+        actionState.transformType = "Remove";
+      } else if (typeof stringTransform === "object") {
+        if ("Substitute" in stringTransform) {
+          actionState.transformType = "Substitute";
+          actionState.transformParams = {
+            from: stringTransform.Substitute.from,
+            to: stringTransform.Substitute.to,
+          };
+        } else if ("Suffix" in stringTransform) {
+          actionState.transformType = "Suffix";
+          actionState.transformParams = {
+            suffix: stringTransform.Suffix.suffix,
+          };
+        } else if ("Prefix" in stringTransform) {
+          actionState.transformType = "Prefix";
+          actionState.transformParams = {
+            prefix: stringTransform.Prefix.prefix,
+          };
+        } else if ("RegexSubstitute" in stringTransform) {
+          actionState.transformType = "RegexSubstitute";
+          actionState.transformParams = {
+            pattern: stringTransform.RegexSubstitute.pattern,
+            replacement: stringTransform.RegexSubstitute.replacement,
+          };
+        } else if ("Replace" in stringTransform) {
+          actionState.transformType = "Replace";
+          actionState.transformParams = {
+            with: stringTransform.Replace.with,
+          };
+        } else if ("Substring" in stringTransform) {
+          actionState.transformType = "Substring";
+          actionState.transformParams = {
+            start: stringTransform.Substring.start,
+            end: stringTransform.Substring.end,
+          };
+        }
+      }
+    } else if ("DateTransform" in fieldTransform.transform) {
+      const dateTransform = fieldTransform.transform.DateTransform;
+
+      if ("TimeDiff" in dateTransform) {
+        actionState.transformType = "TimeDiff";
+        const seconds = dateTransform.TimeDiff.seconds;
+        const absSeconds = Math.abs(seconds);
+        const isNegative = seconds < 0;
+
+        let value: number;
+        let unit: string;
+
+        if (absSeconds >= 86400 && absSeconds % 86400 === 0) {
+          value = absSeconds / 86400;
+          unit = "days";
+        } else if (absSeconds >= 3600 && absSeconds % 3600 === 0) {
+          value = absSeconds / 3600;
+          unit = "hours";
+        } else {
+          value = absSeconds / 60;
+          unit = "minutes";
+        }
+
+        actionState.transformParams = {
+          value,
+          unit,
+          isNegative,
+        };
+      }
+    }
+
+    return actionState;
+  });
+
+  return {
+    actions,
+    matchers: rule.matchers,
+  };
+};
+
+// Convert NewRuleState back to Rule for updating
+export const newRuleStateToRule = (
+  newRuleState: NewRuleState,
+  ruleId: string,
+): Rule => {
+  return {
+    id: ruleId,
+    actions: buildActionsFromNewRule(newRuleState),
+    matchers: newRuleState.matchers,
+  };
 };
