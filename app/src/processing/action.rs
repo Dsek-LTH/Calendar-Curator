@@ -20,15 +20,15 @@ pub struct FieldTransform {
 impl FieldTransform {
     pub fn apply(&self, mut event: Event) -> Event {
         match self.field {
-            Field::Summary => event.summary = self.transform.apply(&event.summary),
+            Field::Title => event.summary = self.transform.apply(&event.summary),
             Field::Description => event.description = self.transform.apply(&event.description),
             Field::Location => event.location = self.transform.apply(&event.location),
-            Field::StartDate => {
+            Field::StartTime => {
                 if let Some(start) = &mut event.start {
                     *start = self.transform.apply_date(start);
                 }
             }
-            Field::EndDate => {
+            Field::EndTime => {
                 if let Some(end) = &mut event.end {
                     *end = self.transform.apply_date(end);
                 }

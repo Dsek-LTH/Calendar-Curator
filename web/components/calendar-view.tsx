@@ -124,8 +124,7 @@ export function CalendarView({
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      hour12:
-        localStorage.getItem("calendar-time-format") === "12-hour" || false,
+      hour12: calendarSettings.timeFormat === "12h",
     });
   };
 
@@ -228,7 +227,7 @@ export function CalendarView({
               <div
                 key={index}
                 className={`min-h-[120px] p-1 border rounded-lg ${
-                  date ? "bg-card hover:bg-muted/50" : "bg-transparent"
+                  date ? "bg-card" : "bg-transparent"
                 } transition-colors`}
               >
                 {date && (
@@ -257,7 +256,7 @@ export function CalendarView({
                         return (
                           <div
                             key={event.original.uid}
-                            className={`text-xs p-1 rounded cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                            className={`border-0 shadow-md text-xs p-1 rounded cursor-pointer transition-all duration-200 hover:shadow-lg ${
                               isMatchedByHoveredRule &&
                               ((event.rule_blocked &&
                                 !event.manually_allowlisted) ||

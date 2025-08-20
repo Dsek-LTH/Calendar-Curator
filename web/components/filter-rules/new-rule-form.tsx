@@ -45,11 +45,11 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
     const newActions = [...newRule.actions];
     const currentAction = newActions[actionIndex];
 
-    // If field is being updated to a date field, set match_type to BetweenDates
+    // If field is being updated to a date field, set transform type to TimeDiff
     if (
       updates.transformField &&
-      (updates.transformField === "StartDate" ||
-        updates.transformField === "EndDate")
+      (updates.transformField === "StartTime" ||
+        updates.transformField === "EndTime")
     ) {
       updates.transformType = "TimeDiff";
     }
@@ -64,7 +64,7 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
   const addMatcherToNewRule = (groupIndex: number) => {
     const newMatcher: Matcher = {
       id: Date.now().toString(),
-      field: "Summary",
+      field: "Title",
       match_type: "Contains",
       value: "",
       negated: false,
@@ -103,13 +103,23 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
   ) => {
     const newMatchers = [...newRule.matchers];
     const currentMatcher = newMatchers[groupIndex][matcherIndex];
+    const oldIsDateField = ["StartTime", "EndTime"].includes(
+      currentMatcher.field,
+    );
+    const newIsDateField = ["StartTime", "EndTime"].includes(
+      updates.field || currentMatcher.field,
+    );
 
     // If field is being updated to a date field, set match_type to BetweenDates
-    if (
-      updates.field &&
-      (updates.field === "StartDate" || updates.field === "EndDate")
-    ) {
+    if (!oldIsDateField && newIsDateField) {
       updates.match_type = "BetweenDates";
+      updates.value = ""; // Reset value when changing field type
+    }
+
+    // If field is being updated to a non-date field, reset match_type
+    if (oldIsDateField && !newIsDateField) {
+      updates.match_type = "Contains"; // Default for non-date fields
+      updates.value = ""; // Reset value when changing field type
     }
 
     newMatchers[groupIndex][matcherIndex] = {
@@ -224,13 +234,13 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
                           <SelectValue placeholder="Select field" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Summary">Title</SelectItem>
+                          <SelectItem value="Title">Title</SelectItem>
                           <SelectItem value="Description">
                             Description
                           </SelectItem>
                           <SelectItem value="Location">Location</SelectItem>
-                          <SelectItem value="StartDate">Start Date</SelectItem>
-                          <SelectItem value="EndDate">End Date</SelectItem>
+                          <SelectItem value="StartTime">Start Time</SelectItem>
+                          <SelectItem value="EndTime">End Time</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -265,8 +275,8 @@ export function NewRuleForm({ onCreateRule }: NewRuleFormProps) {
                       <SelectValue placeholder="Select transform" />
                     </SelectTrigger>
                     <SelectContent>
-                      {action.transformField === "StartDate" ||
-                      action.transformField === "EndDate" ? (
+                      {action.transformField === "StartTime" ||
+                      action.transformField === "EndTime" ? (
                         <SelectItem value="TimeDiff">
                           Time Difference
                         </SelectItem>

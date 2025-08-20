@@ -10,6 +10,7 @@ import {
   ShieldXIcon,
 } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
+import { getCalendarSettings } from "@/lib/settings";
 
 interface BlockedEventsPanelProps {
   events: CalendarEvent[];
@@ -33,8 +34,7 @@ export function BlockedEventsPanel({
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      hour12:
-        localStorage.getItem("calendar-time-format") === "12-hour" || false,
+      hour12: getCalendarSettings().timeFormat === "12h",
     });
   };
 

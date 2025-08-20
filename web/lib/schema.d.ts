@@ -306,7 +306,7 @@ export interface components {
       transformed?: null | components["schemas"]["Event"];
     };
     /** @enum {string} */
-    Field: "Summary" | "Description" | "Location" | "StartDate" | "EndDate";
+    Field: "Title" | "Description" | "Location" | "StartTime" | "EndTime";
     FieldTransform: {
       field: components["schemas"]["Field"];
       transform: components["schemas"]["Transform"];
@@ -318,7 +318,9 @@ export interface components {
       | "StartsWith"
       | "EndsWith"
       | "Regex"
-      | "BetweenDates";
+      | "BetweenDates"
+      | "Weekdays"
+      | "TimeOfDay";
     Matcher: {
       field: components["schemas"]["Field"];
       id: string;

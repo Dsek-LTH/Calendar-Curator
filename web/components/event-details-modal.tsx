@@ -21,6 +21,7 @@ import {
   ScaleIcon,
 } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
+import { getCalendarSettings } from "@/lib/settings";
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;
@@ -51,8 +52,7 @@ export function EventDetailsModal({
       time: date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
-        hour12:
-          localStorage.getItem("calendar-time-format") === "12-hour" || false,
+        hour12: getCalendarSettings().timeFormat === "12h",
       }),
     };
   };

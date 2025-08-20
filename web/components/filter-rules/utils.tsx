@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Field,
   Matcher,
@@ -8,15 +9,17 @@ import {
   FieldTransform,
 } from "@/lib/api";
 import { NewRuleState, ActionState } from "./types";
+import { parseTimeFromUTC } from "@/lib/utils";
+import { getCalendarSettings } from "@/lib/settings";
 
 // Field and match type labels
 export const getFieldLabel = (field: Field): string => {
   const labels = {
-    Summary: "Title",
+    Title: "Title",
     Description: "Description",
     Location: "Location",
-    StartDate: "Start Date",
-    EndDate: "End Date",
+    StartTime: "Start Time",
+    EndTime: "End Time",
   };
   return labels[field];
 };
@@ -29,6 +32,8 @@ export const getMatchTypeLabel = (matchType: Matcher["match_type"]): string => {
     EndsWith: "ends with",
     Regex: "matches regex",
     BetweenDates: "is within date range",
+    Weekdays: "occurs on",
+    TimeOfDay: "occurs",
   };
   return labels[matchType];
 };
@@ -276,9 +281,9 @@ export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
   // For date fields, allow empty values - no validation needed
   const hasInvalidMatchers = newRule.matchers.some((group) =>
     group.some((matcher) => {
-      // Date fields can have empty values
-      if (matcher.field === "StartDate" || matcher.field === "EndDate") {
-        return false;
+      // Date fields can have just a comma in them, not allowed
+      if (matcher.field === "StartTime" || matcher.field === "EndTime") {
+        return !matcher.value || matcher.value.trim() === ",";
       }
       // Other fields require non-empty values
       return !matcher.value?.trim();
@@ -286,4 +291,105 @@ export const isAddRuleDisabled = (newRule: NewRuleState): boolean => {
   );
 
   return hasInvalidMatchers;
+};
+
+// Format matcher value for display
+export const formatMatcherValue = (matcher: Matcher): React.JSX.Element => {
+  if (!matcher.value) return <span>""</span>;
+
+  switch (matcher.match_type) {
+    case "BetweenDates": {
+      const dates = matcher.value.split(",");
+      if (dates.length === 2) {
+        const startDate = new Date(dates[0]).toLocaleDateString();
+        const endDate = new Date(dates[1]).toLocaleDateString();
+        return (
+          <span>
+            <span className="text-muted-foreground"> between </span>
+            <span className="font-medium">{startDate}</span>
+            <span className="text-muted-foreground"> and </span>
+            <span className="font-medium">{endDate}</span>
+          </span>
+        );
+      }
+      return <span>"{matcher.value}"</span>;
+    }
+
+    case "Weekdays": {
+      const weekdays = matcher.value.split(",").map((day) => day.trim());
+      const weekdayNames = weekdays.map((day) => {
+        // Only accept abbreviated names (Mon, Tue, etc.)
+        const pluralNames: { [key: string]: string } = {
+          Mon: "Mondays",
+          Tue: "Tuesdays",
+          Wed: "Wednesdays",
+          Thu: "Thursdays",
+          Fri: "Fridays",
+          Sat: "Saturdays",
+          Sun: "Sundays",
+        };
+        return pluralNames[day] || day;
+      });
+
+      return (
+        <span>
+          {weekdayNames.map((name, index) => (
+            <span key={index}>
+              {index > 0 && (
+                <span className="text-muted-foreground">
+                  {index === weekdayNames.length - 1 ? " and " : ", "}
+                </span>
+              )}
+              <span className="font-medium">{name}</span>
+            </span>
+          ))}
+        </span>
+      );
+    }
+
+    case "TimeOfDay": {
+      const times = matcher.value.split(",");
+      if (times.length === 2) {
+        const startTime = times[0].trim();
+        const endTime = times[1].trim();
+
+        const formatTime = (time: string) => {
+          return parseTimeFromUTC(
+            time,
+            getCalendarSettings().timeFormat === "12h",
+          );
+        };
+
+        // Handle partial ranges
+        if (!startTime && endTime) {
+          return (
+            <span>
+              <span className="text-muted-foreground">before </span>
+              <span className="font-medium">{formatTime(endTime)}</span>
+            </span>
+          );
+        } else if (startTime && !endTime) {
+          return (
+            <span>
+              <span className="text-muted-foreground">after </span>
+              <span className="font-medium">{formatTime(startTime)}</span>
+            </span>
+          );
+        } else if (startTime && endTime) {
+          return (
+            <span>
+              <span className="text-muted-foreground">between </span>
+              <span className="font-medium">{formatTime(startTime)}</span>
+              <span className="text-muted-foreground"> and </span>
+              <span className="font-medium">{formatTime(endTime)}</span>
+            </span>
+          );
+        }
+      }
+      return <span>"{matcher.value}"</span>;
+    }
+
+    default:
+      return <span>"{matcher.value}"</span>;
+  }
 };

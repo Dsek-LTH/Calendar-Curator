@@ -142,10 +142,11 @@ pub async fn get_events(
                             changed_fields.push("end".to_string());
                         }
 
-                        current_event = transformed;
+                        if !rule_blocked {
+                            current_event = transformed;
+                        }
                     } else {
                         rule_blocked = true;
-                        break;
                     }
                 }
             }

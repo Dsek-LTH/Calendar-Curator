@@ -114,8 +114,28 @@ export function Home() {
           calendarId={calendarId}
         />
 
-        {events.length > 0 && (
-          <div className="grid lg:grid-cols-4 gap-6">
+        {/* Main Content Area with conditional blur */}
+        <div className={`relative ${!calendarId ? "pointer-events-none" : ""}`}>
+          {/* Blur overlay when no calendar is loaded */}
+          {!calendarId && (
+            <div className="absolute inset-0 bg-white/30 z-10 flex items-center justify-center rounded-lg">
+              <Card className="p-6 shadow-lg bg-white/90">
+                <CardContent className="text-center space-y-2">
+                  <CalendarIcon className="h-12 w-12 mx-auto text-slate-400" />
+                  <h3 className="text-lg font-semibold text-slate-700">
+                    No Calendar Loaded
+                  </h3>
+                  <p className="text-slate-500 text-sm">
+                    Please enter a calendar URL above to get started
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <div
+            className={`grid lg:grid-cols-4 gap-6 ${!calendarId ? "blur-sm" : ""}`}
+          >
             <div className="lg:col-span-1 space-y-6">
               {/* Filter Rules Panel */}
               <RulesPanel
@@ -141,18 +161,7 @@ export function Home() {
               />
             </div>
           </div>
-        )}
-
-        {events.length === 0 && !loading && (
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-blue-50">
-            <CardContent className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-              <p className="text-slate-600">
-                Enter an iCal URL above to start filtering your calendar
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </div>
     </div>
   );

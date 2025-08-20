@@ -4,6 +4,7 @@ import {
   getFieldLabel,
   getMatchTypeLabel,
   getTransformDescription,
+  formatMatcherValue,
 } from "./utils";
 
 interface RuleDescriptionProps {
@@ -77,7 +78,7 @@ export function RuleDescription({ rule }: RuleDescriptionProps) {
                 <span className="text-muted-foreground mx-1">
                   {getMatchTypeLabel(matcher.match_type)}
                 </span>
-                <span className="font-medium">&quot;{matcher.value}&quot;</span>
+                {formatMatcherValue(matcher)}
               </span>
             )),
           )}
