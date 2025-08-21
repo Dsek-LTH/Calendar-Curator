@@ -37,7 +37,7 @@ impl EventCache {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        now - self.cached_at > 24 * 60 * 60 // 24 hours in seconds
+        now - self.cached_at > 15 * 60 // 15 minutes
     }
 }
 

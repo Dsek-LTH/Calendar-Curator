@@ -2,7 +2,6 @@ use crate::processing::action::Action;
 use crate::processing::event::Event;
 use crate::processing::matcher::Matcher;
 use serde::{Deserialize, Serialize};
-use std::cmp::PartialEq;
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, ToSchema, Serialize, Deserialize)]
