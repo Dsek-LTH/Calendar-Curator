@@ -18,6 +18,7 @@ pub struct Calendar {
     pub manually_blocked: HashSet<String>,
     /// List of manually allowlisted event IDs (immune from rule blocking).
     pub manually_allowlisted: HashSet<String>,
+    pub last_accessed: Option<u64>,
 }
 
 impl Calendar {
@@ -29,6 +30,7 @@ impl Calendar {
             url,
             manually_blocked: HashSet::new(),
             manually_allowlisted: HashSet::new(),
+            last_accessed: None,
         }
     }
 
@@ -62,10 +64,6 @@ impl Calendar {
                 Some(prev_event.clone())
             })
             .collect()
-    }
-
-    pub fn get_events(self) -> Vec<Event> {
-        self.ical.events
     }
 
     pub fn get_filtered_icalendar(&self) -> ICalendar {

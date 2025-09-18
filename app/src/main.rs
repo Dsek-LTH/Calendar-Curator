@@ -1,5 +1,8 @@
 use crate::api::routes;
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
 mod api;
@@ -16,6 +19,9 @@ async fn main() -> std::io::Result<()> {
 
     // Create shared database instance
     let db_state = db::create_db_instance(db_path).await;
+
+    // Start background task to clean up old calendars
+    start_calendar_cleanup_task(Arc::clone(&db_state));
 
     let socket_address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
     let listener = tokio::net::TcpListener::bind(socket_address).await?;
@@ -38,11 +44,23 @@ async fn main() -> std::io::Result<()> {
 
     println!("Calendar Curator backend starting on {}", socket_address);
     axum::serve(listener, app.into_make_service()).await
+}
 
-    // let str = get_calendar(Url::parse("https://cloud.timeedit.net/lu/web/lth1/ri6X80g51560Y2QQ95Z59X0Y0Yy5002495967Q564f596Z53X04Y55545761924X5595951539X54444399XQ55X554X676349yZoXy1u6beZnQQ90Z.ics")?).await;
-    // match str {
-    //     Ok(calendar) => println!("{}", calendar.to_string()),
-    //     Err(e) => eprintln!("Error fetching calendar: {}", e),
-    // };
-    // Ok(())
+fn start_calendar_cleanup_task(db_state: Arc<Mutex<db::Db>>) {
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(30 * 60 * 60)).await;
+
+            // Clean up calendars that haven't been accessed in a week
+            let mut db = db_state.lock().await;
+            let removed_ids = db.cleanup_old_calendars().await;
+
+            if !removed_ids.is_empty() {
+                println!(
+                    "Cleaned up {} calendars that haven't been accessed in a week",
+                    removed_ids.len()
+                );
+            }
+        }
+    });
 }

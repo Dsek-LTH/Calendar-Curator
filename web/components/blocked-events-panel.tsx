@@ -3,12 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  EyeIcon,
-  EyeOffIcon, MapPinIcon,
-  ShieldCheckIcon,
-  ShieldXIcon,
-} from "lucide-react";
+import { EyeIcon, EyeOffIcon, MapPinIcon, ShieldCheckIcon, ShieldXIcon, } from "lucide-react";
 import { CalendarEvent } from "@/lib/api";
 import { getCalendarSettings } from "@/lib/settings";
 
@@ -129,7 +124,7 @@ export function BlockedEventsPanel({
 
                 {event.original.location && (
                   <div className="text-xs text-muted-foreground">
-                    <MapPinIcon/>
+                    <MapPinIcon />
                     {event.original.location}
                   </div>
                 )}

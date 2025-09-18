@@ -1,13 +1,14 @@
-use crate::api::types::EventResponse;
+use crate::api::types::{CalendarStatsResponse, EventResponse};
 use crate::db::{Calendar, DbState};
 use crate::processing::rule::Rule;
 use crate::upstream;
+use axum::Json;
 use axum::body::Body;
 use axum::extract::{Path, State};
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::Json;
 use serde::{Deserialize, Serialize};
+use std::time::UNIX_EPOCH;
 use tokio_util::io::ReaderStream;
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
@@ -32,6 +33,7 @@ pub(crate) fn router() -> axum::Router<DbState> {
         .routes(routes!(allowlist_add))
         .routes(routes!(allowlist_remove))
         .routes(routes!(allowlist_list))
+        .routes(routes!(get_stats))
         .split_for_parts();
     app_router
         .route("/calendars/{id}/feed", axum::routing::get(get_feed))
@@ -99,7 +101,7 @@ pub async fn get_events(
     State(db): State<DbState>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<EventResponse>>, StatusCode> {
-    let db_lock = db.lock().await;
+    let mut db_lock = db.lock().await;
     let cal = db_lock
         .get_calendar(&id)
         .await
@@ -234,13 +236,19 @@ pub async fn get_feed(
     State(db): State<DbState>,
     Path(id): Path<String>,
 ) -> Result<(HeaderMap, Body), StatusCode> {
-    let db_lock = db.lock().await;
-    let calendar = db_lock
+    let mut db_lock = db.lock().await;
+    let mut calendar = db_lock
         .get_calendar(&id)
         .await
         .ok_or(StatusCode::NOT_FOUND)?;
     drop(db_lock);
 
+    calendar.last_accessed = Some(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .as_secs(),
+    );
     let ical = calendar.get_filtered_icalendar();
 
     let reader = std::io::Cursor::new(ical.to_string().into_bytes());
@@ -556,4 +564,42 @@ pub async fn allowlist_list(
     };
 
     Ok(Json(set))
+}
+
+#[utoipa::path(
+    get,
+    path = "/stats",
+    responses(
+        (status = 200, description = "Retrieved calendar statistics", body = CalendarStatsResponse),
+    )
+)]
+pub async fn get_stats(
+    State(db): State<DbState>,
+) -> Result<Json<CalendarStatsResponse>, StatusCode> {
+    let db_lock = db.lock().await;
+    let mut active_calendars = 0;
+    let calendars = db_lock.list_calendars().await;
+
+    for calendar in calendars {
+        let Some(last_accessed) = calendar.last_accessed else {
+            continue;
+        };
+        let Ok(duration_since_last_access) = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH + std::time::Duration::from_secs(last_accessed))
+            .map_err(|err| {
+                eprintln!("Error calculating duration since last access: {}", err);
+                ()
+            })
+        else {
+            continue;
+        };
+
+        if duration_since_last_access < std::time::Duration::from_secs(2 * 24 * 60 * 60) {
+            active_calendars += 1;
+        }
+    }
+
+    let stats = CalendarStatsResponse { active_calendars };
+
+    Ok(Json(stats))
 }

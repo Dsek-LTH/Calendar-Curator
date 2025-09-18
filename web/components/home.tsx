@@ -8,6 +8,7 @@ import { CalendarEvent, fetchClient } from "@/lib/api";
 import { CalendarUrlCard } from "@/components/calendar-url-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { RulesPanel } from "@/components/filter-rules-panel";
+import { Header } from "@/components/header";
 
 export function Home() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -89,20 +90,8 @@ export function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold flex items-center justify-center gap-2 ">
-            <div className="gap-2 flex items-center justify-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              <CalendarIcon className="h-8 w-8 text-blue-600" />
-              Calendar Curator
-            </div>
-          </h1>
-          <p className="text-slate-600">
-            Curate your calendar events with custom rules
-          </p>
-        </div>
+        <Header />
 
-        {/* URL Input */}
         <CalendarUrlCard
           setEvents={setEvents}
           setCalendarId={setCalendarId}

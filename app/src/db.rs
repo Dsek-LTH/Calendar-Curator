@@ -81,6 +81,10 @@ impl Db {
         });
     }
 
+    pub async fn list_calendars(&self) -> Vec<Calendar> {
+        self.calendars.values().cloned().collect()
+    }
+
     pub async fn add_calendar(&mut self, mut calendar: Calendar) -> String {
         let id = calendar.id.clone();
         // We don't want to store all events in the DB, just the calendar metadata
@@ -90,11 +94,22 @@ impl Db {
         id
     }
 
-    pub async fn get_calendar(&self, id: &str) -> Option<Calendar> {
+    pub async fn get_calendar(&mut self, id: &str) -> Option<Calendar> {
         let calendars = self.calendars.get(id);
         let Some(mut calendar) = calendars.cloned() else {
             return None;
         };
+
+        // Update last accessed time
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        if let Some(calendar_ref) = self.calendars.get_mut(id) {
+            calendar_ref.last_accessed = Some(now);
+            self.save_data_bg().await;
+        }
 
         // Check if we have cached events that are not expired
         let mut event_cache = EVENT_CACHE.lock().await;
@@ -286,6 +301,49 @@ impl Db {
 
         self.save_data_bg().await; // Auto-save
         Ok(())
+    }
+
+    pub async fn cleanup_old_calendars(&mut self) -> Vec<String> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        // One week in seconds = 7 days * 24 hours * 60 minutes * 60 seconds
+        let one_week_in_seconds = 7 * 24 * 60 * 60;
+        let cutoff_time = now - one_week_in_seconds;
+
+        let mut removed_ids = Vec::new();
+
+        // Identify calendars to remove (older than one week)
+        let to_remove: Vec<String> = self
+            .calendars
+            .iter()
+            .filter(|(_, calendar)| {
+                match calendar.last_accessed {
+                    Some(last_accessed) => last_accessed < cutoff_time,
+                    None => true, // Remove calendars with no access timestamp
+                }
+            })
+            .map(|(id, _)| id.clone())
+            .collect();
+
+        // Remove identified calendars
+        for id in &to_remove {
+            self.calendars.remove(id);
+
+            // Also clean up the event cache for this calendar
+            let mut event_cache = EVENT_CACHE.lock().await;
+            event_cache.remove(id);
+
+            removed_ids.push(id.clone());
+        }
+
+        if !removed_ids.is_empty() {
+            self.save_data_bg().await;
+        }
+
+        removed_ids
     }
 }
 

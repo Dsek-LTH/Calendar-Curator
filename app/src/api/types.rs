@@ -15,3 +15,8 @@ pub struct EventResponse {
     /// Whether this event is allowlisted (immune from rule blocking)
     pub manually_allowlisted: bool,
 }
+
+#[derive(Serialize, ToSchema)]
+pub struct CalendarStatsResponse {
+    pub(crate) active_calendars: i32,
+}
