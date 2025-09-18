@@ -1,15 +1,17 @@
 # Unified Dockerfile for both frontend and backend
-FROM node:18 AS frontend-builder
-
+FROM node:20-slim AS frontend-builder
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 WORKDIR /app/frontend
 
 # Copy package files and install dependencies
-COPY web/package.json web/package-lock.json* ./
-RUN npm ci
+COPY web/package.json web/pnpm-lock.json* ./
+RUN pnpm i
 
 # Copy frontend source and build
 COPY web/ .
-RUN npm run build
+RUN pnpm build
 
 # Rust backend stage
 FROM rust:slim AS backend-builder
