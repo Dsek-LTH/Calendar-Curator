@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
 fn start_calendar_cleanup_task(db_state: Arc<Mutex<db::Db>>) {
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(Duration::from_secs(30 * 60 * 60)).await;
+            tokio::time::sleep(Duration::from_secs(100 * 60 * 60)).await;
 
             // Clean up calendars that haven't been accessed in a week
             let mut db = db_state.lock().await;
