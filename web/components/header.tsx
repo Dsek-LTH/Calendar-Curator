@@ -1,9 +1,10 @@
 import { CalendarIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { $api } from "@/lib/api";
+import { Credit } from "@/components/credit";
 
 export function Header() {
-  const [recentCalendars, setActiveCalendars] = useState<number | null>(null);
+  const [activeCalendars, setActiveCalendars] = useState<number | null>(null);
 
   let { data: stats } = $api.useQuery("get", "/stats", {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
@@ -15,10 +16,6 @@ export function Header() {
     }
   }, [stats]);
 
-  if (recentCalendars === null) {
-    return null;
-  }
-
   return (
     <>
       <div className="text-center space-y-2">
@@ -28,25 +25,17 @@ export function Header() {
             Calendar Curator
           </div>
         </h1>
-        {recentCalendars && (
+        {!!activeCalendars && activeCalendars != 0 && (
           <p className="text-slate-600">
             Currently helping{" "}
             <b>
-              {recentCalendars} {recentCalendars === 1 ? "person" : "people"}
+              {activeCalendars} {activeCalendars === 1 ? "person" : "people"}
             </b>{" "}
             manage their calendars
           </p>
         )}
       </div>
-      <p className="absolute left-[90%] top-4 text-sm text-slate-500">
-        Made with ❤️ by{" "}
-        <a
-          href="https://github.com/confusinguser/calendar-curator"
-          className="text-blue-500 hover:underline"
-        >
-          Mostafa Kerim
-        </a>
-      </p>
+      <Credit className="absolute right-[30px] top-4 text-sm text-slate-500 font-semibold"/>
     </>
   );
 }
