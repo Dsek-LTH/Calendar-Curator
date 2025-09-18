@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   EyeIcon,
-  EyeOffIcon,
+  EyeOffIcon, MapPinIcon,
   ShieldCheckIcon,
   ShieldXIcon,
 } from "lucide-react";
@@ -46,7 +46,7 @@ export function BlockedEventsPanel({
           Manual Overrides ({totalEvents})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pb-52 max-h-[600px] p-6">
+      <CardContent className="space-y-4 pb-52 overflow-y-auto max-h-[600px] p-6">
         {/* Blocked Events Section */}
         {blockedEvents.length > 0 && (
           <div className="space-y-3">
@@ -129,7 +129,8 @@ export function BlockedEventsPanel({
 
                 {event.original.location && (
                   <div className="text-xs text-muted-foreground">
-                    📍 {event.original.location}
+                    <MapPinIcon/>
+                    {event.original.location}
                   </div>
                 )}
 

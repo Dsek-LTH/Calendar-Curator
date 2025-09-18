@@ -1,6 +1,7 @@
 mod action;
 pub mod calendar;
 pub(crate) mod event;
+pub mod example_calendar;
 pub mod ical;
 pub mod matcher;
 pub mod rule;

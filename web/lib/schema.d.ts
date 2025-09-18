@@ -4,902 +4,882 @@
  */
 
 export interface paths {
-  "/calendars/create": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_calendar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["create_calendar"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/allowlist/add": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/allowlist/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["allowlist_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["allowlist_add"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/allowlist/list": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/allowlist/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["allowlist_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["allowlist_list"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/allowlist/remove": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/allowlist/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["allowlist_remove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["allowlist_remove"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/block/add": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/block/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["block_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["block_add"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/block/list": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/block/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["block_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["block_list"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/block/remove": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/block/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["block_remove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["block_remove"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/get_events": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/get_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["get_events"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/get_url": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/get_url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_calendar_url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["get_calendar_url"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/create": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["create_rule"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/list": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_rules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["list_rules"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/reorder": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reorder_rules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put: operations["reorder_rules"];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/{rule_id}/delete": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/{rule_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_rule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations["delete_rule"];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/{rule_id}/duplicate": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/{rule_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["duplicate_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post: operations["duplicate_rule"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/{rule_id}/get": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/{rule_id}/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_rule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get: operations["get_rule"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/rules/{rule_id}/update": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/rules/{rule_id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_rule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put: operations["update_rule"];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{id}/update_url": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/calendars/{id}/update_url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_calendar_url"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put: operations["update_calendar_url"];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    Action:
-      | {
-          FieldTransform: components["schemas"]["FieldTransform"];
-        }
-      | "Block"
-      | "Allow";
-    CreateCalendar: {
-      url: string;
-    };
-    CreateCalendarResponse: {
-      id: string;
-    };
-    DateFormat: string;
-    DateTransform: {
-      TimeDiff: {
-        /** Format: int64 */
-        seconds: number;
-      };
-    };
-    Event: {
-      description: string;
-      end?: null | components["schemas"]["DateFormat"];
-      last_modified: string;
-      location: string;
-      start?: null | components["schemas"]["DateFormat"];
-      summary: string;
-      timestamp: string;
-      uid: string;
-    };
-    EventResponse: {
-      /** @description Which fields were changed by transformations */
-      changed_fields: string[];
-      /** @description List of rule IDs that matched this event. */
-      filtered_by: string[];
-      /** @description Whether this event is allowlisted (immune from rule blocking) */
-      manually_allowlisted: boolean;
-      manually_blocked: boolean;
-      original: components["schemas"]["Event"];
-      rule_blocked: boolean;
-      transformed?: null | components["schemas"]["Event"];
-    };
-    /** @enum {string} */
-    Field: "Title" | "Description" | "Location" | "StartTime" | "EndTime";
-    FieldTransform: {
-      field: components["schemas"]["Field"];
-      transform: components["schemas"]["Transform"];
-    };
-    /** @enum {string} */
-    MatchType:
-      | "Exact"
-      | "Contains"
-      | "StartsWith"
-      | "EndsWith"
-      | "Regex"
-      | "BetweenDates"
-      | "Weekdays"
-      | "TimeOfDay";
-    Matcher: {
-      field: components["schemas"]["Field"];
-      id: string;
-      match_type: components["schemas"]["MatchType"];
-      negated: boolean;
-      value: string;
-    };
-    ReorderRulesRequest: {
-      rule_ids: string[];
-    };
-    Rule: {
-      actions: components["schemas"]["Action"][];
-      id: string;
-      /** @description Each inner vector represents a logical AND condition,
-       *     while the outer vector represents a logical OR condition. */
-      matchers: components["schemas"]["Matcher"][][];
-    };
-    StringTransform:
-      | {
-          Substitute: {
-            from: string;
-            to: string;
-          };
-        }
-      | {
-          Suffix: {
-            suffix: string;
-          };
-        }
-      | {
-          Prefix: {
-            prefix: string;
-          };
-        }
-      | {
-          RegexSubstitute: {
-            pattern: string;
-            replacement: string;
-          };
-        }
-      | {
-          Replace: {
-            with: string;
-          };
-        }
-      | {
-          Substring: {
-            end?: number | null;
-            start: number;
-          };
-        }
-      | "Remove";
-    Transform:
-      | {
-          StringTransform: components["schemas"]["StringTransform"];
-        }
-      | {
-          DateTransform: components["schemas"]["DateTransform"];
+    schemas: {
+        Action: {
+            FieldTransform: components["schemas"]["FieldTransform"];
+        } | "Block" | "Allow";
+        CreateCalendar: {
+            url: string;
         };
-    UpdateCalendarUrl: {
-      url: string;
+        CreateCalendarResponse: {
+            id: string;
+        };
+        DateFormat: string;
+        DateTransform: {
+            TimeDiff: {
+                /** Format: int64 */
+                seconds: number;
+            };
+        };
+        Event: {
+            description: string;
+            end?: null | components["schemas"]["DateFormat"];
+            last_modified: string;
+            location: string;
+            start?: null | components["schemas"]["DateFormat"];
+            summary: string;
+            timestamp: string;
+            uid: string;
+        };
+        EventResponse: {
+            /** @description Which fields were changed by transformations */
+            changed_fields: string[];
+            /** @description List of rule IDs that matched this event. */
+            filtered_by: string[];
+            /** @description Whether this event is allowlisted (immune from rule blocking) */
+            manually_allowlisted: boolean;
+            manually_blocked: boolean;
+            original: components["schemas"]["Event"];
+            rule_blocked: boolean;
+            transformed?: null | components["schemas"]["Event"];
+        };
+        /** @enum {string} */
+        Field: "Title" | "Description" | "Location" | "StartTime" | "EndTime";
+        FieldTransform: {
+            field: components["schemas"]["Field"];
+            transform: components["schemas"]["Transform"];
+        };
+        /** @enum {string} */
+        MatchType: "Exact" | "Contains" | "StartsWith" | "EndsWith" | "Regex" | "BetweenDates" | "Weekdays" | "TimeOfDay";
+        Matcher: {
+            field: components["schemas"]["Field"];
+            id: string;
+            match_type: components["schemas"]["MatchType"];
+            negated: boolean;
+            value: string;
+        };
+        ReorderRulesRequest: {
+            rule_ids: string[];
+        };
+        Rule: {
+            actions: components["schemas"]["Action"][];
+            id: string;
+            /** @description Each inner vector represents a logical AND condition,
+             *     while the outer vector represents a logical OR condition. */
+            matchers: components["schemas"]["Matcher"][][];
+        };
+        StringTransform: {
+            Substitute: {
+                from: string;
+                to: string;
+            };
+        } | {
+            Suffix: {
+                suffix: string;
+            };
+        } | {
+            Prefix: {
+                prefix: string;
+            };
+        } | {
+            RegexSubstitute: {
+                pattern: string;
+                replacement: string;
+            };
+        } | {
+            Replace: {
+                with: string;
+            };
+        } | {
+            Substring: {
+                end?: number | null;
+                start: number;
+            };
+        } | "Remove";
+        Transform: {
+            StringTransform: components["schemas"]["StringTransform"];
+        } | {
+            DateTransform: components["schemas"]["DateTransform"];
+        };
+        UpdateCalendarUrl: {
+            url: string;
+        };
     };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  create_calendar: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateCalendar"];
-      };
-    };
-    responses: {
-      /** @description Created calendar */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    create_calendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["CreateCalendarResponse"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCalendar"];
+            };
         };
-      };
-    };
-  };
-  allowlist_add: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "text/plain": string;
-      };
-    };
-    responses: {
-      /** @description Event added to allowlist */
-      204: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Created calendar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateCalendarResponse"];
+                };
+            };
         };
-        content?: never;
-      };
     };
-  };
-  allowlist_list: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description List of all allowlisted events */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    allowlist_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": string[];
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
         };
-      };
-    };
-  };
-  allowlist_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "text/plain": string;
-      };
-    };
-    responses: {
-      /** @description Event removed from allowlist */
-      204: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Event added to allowlist */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content?: never;
-      };
-      /** @description Event not found in allowlist */
-      404: {
-        headers: {
-          [name: string]: unknown;
+    };
+    allowlist_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-    };
-  };
-  block_add: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "text/plain": string;
-      };
-    };
-    responses: {
-      /** @description Rule created */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description List of all allowlisted events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
         };
-        content: {
-          "text/plain": string;
+    };
+    allowlist_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-      };
-    };
-  };
-  block_list: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "text/plain": string;
-      };
-    };
-    responses: {
-      /** @description List of all blocks */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
         };
-        content: {
-          "application/json": string[];
+        responses: {
+            /** @description Event removed from allowlist */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Event not found in allowlist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-      };
     };
-  };
-  block_remove: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "text/plain": string;
-      };
-    };
-    responses: {
-      /** @description Rule created */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    block_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "text/plain": string;
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
         };
-      };
+        responses: {
+            /** @description Rule created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
     };
-  };
-  get_events: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
+    block_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
+        };
+        responses: {
+            /** @description List of all blocks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Retrieved events with transformations for the calendar */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    block_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["EventResponse"][];
+        requestBody: {
+            content: {
+                "text/plain": string;
+            };
         };
-      };
+        responses: {
+            /** @description Rule created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
     };
-  };
-  get_calendar_url: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
+    get_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retrieved events with transformations for the calendar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"][];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Retrieved url */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_calendar_url: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "text/plain": string;
+        requestBody?: never;
+        responses: {
+            /** @description Retrieved url */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Calendar not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-      };
-      /** @description Calendar not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
     };
-  };
-  create_rule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Rule"];
-      };
-    };
-    responses: {
-      /** @description Rule created */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    create_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "text/plain": string;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Rule"];
+            };
         };
-      };
+        responses: {
+            /** @description Rule created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
     };
-  };
-  list_rules: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
+    list_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"][];
+                };
+            };
+            /** @description Calendar not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description List of rules */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    reorder_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["Rule"][];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRulesRequest"];
+            };
         };
-      };
-      /** @description Calendar not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Rules reordered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid rule order or missing rules */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Calendar not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content?: never;
-      };
     };
-  };
-  reorder_rules: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ReorderRulesRequest"];
-      };
-    };
-    responses: {
-      /** @description Rules reordered successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    delete_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+                /** @description The ID of the rule */
+                rule_id: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-      /** @description Invalid rule order or missing rules */
-      400: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Rule deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content?: never;
-      };
-      /** @description Calendar not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
     };
-  };
-  delete_rule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-        /** @description The ID of the rule */
-        rule_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Rule deleted */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    duplicate_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+                /** @description The ID of the rule to duplicate */
+                rule_id: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-    };
-  };
-  duplicate_rule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-        /** @description The ID of the rule to duplicate */
-        rule_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Rule duplicated successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Rule duplicated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Rule or calendar not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content: {
-          "text/plain": string;
-        };
-      };
-      /** @description Rule or calendar not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
     };
-  };
-  get_rule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-        /** @description The ID of the rule */
-        rule_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Retrieved rule */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+                /** @description The ID of the rule */
+                rule_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["Rule"];
+        requestBody?: never;
+        responses: {
+            /** @description Retrieved rule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            /** @description Rule not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-      };
-      /** @description Rule not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+    };
+    update_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+                /** @description The ID of the rule */
+                rule_id: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-    };
-  };
-  update_rule: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-        /** @description The ID of the rule */
-        rule_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Rule"];
-      };
-    };
-    responses: {
-      /** @description Rule updated */
-      201: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Rule"];
+            };
         };
-        content?: never;
-      };
-      /** @description Rule not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Rule updated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rule not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content?: never;
-      };
     };
-  };
-  update_calendar_url: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the calendar */
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateCalendarUrl"];
-      };
-    };
-    responses: {
-      /** @description Calendar URL updated successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    update_calendar_url: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the calendar */
+                id: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-      /** @description Invalid URL or failed to fetch calendar */
-      400: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCalendarUrl"];
+            };
         };
-        content?: never;
-      };
-      /** @description Calendar not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Calendar URL updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid URL or failed to fetch calendar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Calendar not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-        content?: never;
-      };
     };
-  };
 }
