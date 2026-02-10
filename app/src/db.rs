@@ -88,7 +88,7 @@ impl Db {
     pub async fn add_calendar(&mut self, mut calendar: Calendar) -> String {
         let id = calendar.id.clone();
         // We don't want to store all events in the DB, just the calendar metadata
-        calendar.ical = ICalendar::default();
+        calendar.ical.events = ICalendar::default().events;
         self.calendars.insert(id.clone(), calendar);
         self.save_data_bg().await; // Auto-save
         id
