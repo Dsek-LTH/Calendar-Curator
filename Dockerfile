@@ -74,6 +74,9 @@ RUN chgrp 0 /app/start.sh && chmod g+rx /app/start.sh
 # Create data directory for persistent storage
 RUN mkdir -p /app/data && chgrp 0 /app/data && chmod g+rwX /app/data
 
+RUN chgrp -R 0 /app \
+    && chmod -R g+rw /app
+
 # Set environment variables
 ENV DATABASE_PATH=/app/data/calendars.json
 ENV NODE_ENV=production
