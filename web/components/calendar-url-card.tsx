@@ -32,6 +32,9 @@ export function CalendarUrlCard({
   const [windowLocation, setWindowLocation] = useState("");
   const [isChangingUrl, setIsChangingUrl] = useState(false);
   const [newUrl, setNewUrl] = useState("");
+  const subscriptionUrl = proxyUrl
+    ? `${windowLocation.replace(/^https?:/, "webcal:")}${proxyUrl}`
+    : "";
 
   // UUID regex pattern
   const uuidRegex =
@@ -311,7 +314,7 @@ export function CalendarUrlCard({
             </p>
             <div className="flex gap-2">
               <Input
-                value={`${windowLocation}${proxyUrl}`}
+                value={subscriptionUrl}
                 readOnly
                 className={`flex-1 font-mono text-xs bg-white ${
                   isLocalHost ? "border-red-200" : "border-green-200"
@@ -321,7 +324,7 @@ export function CalendarUrlCard({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  navigator.clipboard.writeText(`${windowLocation}${proxyUrl}`)
+                  navigator.clipboard.writeText(subscriptionUrl)
                 }
                 className={
                   isLocalHost

@@ -256,11 +256,7 @@ pub async fn get_feed(
     let mut headers = HeaderMap::new();
     headers.insert(
         header::CONTENT_TYPE,
-        "application/octet-stream".parse().unwrap(),
-    );
-    headers.insert(
-        header::CONTENT_DISPOSITION,
-        "attachment; filename=\"feed.ics\"".parse().unwrap(),
+        "text/calendar; charset=utf-8".parse().unwrap(),
     );
 
     Ok((headers, body))
